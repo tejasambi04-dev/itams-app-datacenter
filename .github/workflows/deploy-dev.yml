@@ -51,12 +51,12 @@ jobs:
         run: |
           docker tag \
             itams-frontend:${{ github.run_number }} \
-            ${{ steps.login-ecr.outputs.registry }}/itams-frontend:${{ github.run_number }}
+            public.ecr.aws/w3l7a2t4/itams-backend:${{ github.run_number }}
 
       - name: Push image to ECR
         run: |
           docker push \
-            ${{ steps.login-ecr.outputs.registry }}/itams-frontend:${{ github.run_number }}
+            public.ecr.aws/w3l7a2t4/itams-backend:${{ github.run_number }}
 
 
   # ==========================================================
@@ -94,17 +94,19 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+        run: |
+          aws ecr-public get-login-password --region us-east-1 | \
+          docker login --username AWS --password-stdin public.ecr.aws
 
       - name: Tag Docker image
         run: |
           docker tag \
             itams-backend:${{ github.run_number }} \
-            ${{ steps.login-ecr.outputs.registry }}/itams-backend:${{ github.run_number }}
+            public.ecr.aws/w3l7a2t4/itams-frontend:${{ github.run_number }}
 
       - name: Push image to ECR
         run: |
           docker push \
-            ${{ steps.login-ecr.outputs.registry }}/itams-backend:${{ github.run_number }}
+            public.ecr.aws/w3l7a2t4/itams-frontend:${{ github.run_number }}
 
       
