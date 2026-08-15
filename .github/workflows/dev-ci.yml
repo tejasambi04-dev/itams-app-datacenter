@@ -38,6 +38,11 @@ jobs:
       - name: Run backend tests
         working-directory: ./backend
         run: echo "Test ran successfully"
+      
+      - name: Get GitHub IDs
+        run: |
+          echo "Owner ID: ${{ github.repository_owner_id }}"
+          echo "Repository ID: ${{ github.repository_id }}"
 
 
   # ==========================================================
