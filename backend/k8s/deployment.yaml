@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: itams-app-backend
-        image: nginx:1.25.3  # Production best practice: use specific tag, not 'latest'
+        image: public.ecr.aws/w3l7a2t4/itams-backend:5  # Production best practice: use specific tag, not 'latest'
         ports:
         - containerPort: 3000
 
