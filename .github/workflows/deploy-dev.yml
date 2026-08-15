@@ -53,12 +53,12 @@ jobs:
         run: |
           docker tag \
             itams-frontend:${{ github.run_number }} \
-            public.ecr.aws/w3l7a2t4/itams-backend:${{ github.run_number }}
+            public.ecr.aws/w3l7a2t4/itams-frontend:${{ github.run_number }}
 
       - name: Push image to ECR
         run: |
           docker push \
-            public.ecr.aws/w3l7a2t4/itams-backend:${{ github.run_number }}
+            public.ecr.aws/w3l7a2t4/itams-frontend:${{ github.run_number }}
 
 
   # ==========================================================
@@ -104,15 +104,15 @@ jobs:
         run: |
           docker tag \
             itams-backend:${{ github.run_number }} \
-            public.ecr.aws/w3l7a2t4/itams-frontend:${{ github.run_number }}
+            public.ecr.aws/w3l7a2t4/itams-backend:${{ github.run_number }}
 
       - name: Push image to ECR
         run: |
           docker push \
-            public.ecr.aws/w3l7a2t4/itams-frontend:${{ github.run_number }}
+            public.ecr.aws/w3l7a2t4/itams-backend:${{ github.run_number }}
 
   #===========================================
-  #deploy-frontend
+  #deploy-app
   #=========================================
   backend-deploy:
     name: deploy Backend
