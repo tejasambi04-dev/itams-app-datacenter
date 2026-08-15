@@ -127,7 +127,7 @@ jobs:
       - name: backend-deplpy
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" > ~./kube/config
+          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
           chmod 600 ~./kube/config
       
       - name: Verify connection to cluster
@@ -142,6 +142,16 @@ jobs:
         working-directory: ./frontend
         run: |
           kubectl apply -f k8s
+      
+      - name: Update application image for frontend
+        run: |
+           kubectl set image deployment/itams-frontend \
+           itams-app-frontend=public.ecr.aws/w3l7a2t4/itams-frontend:${{ github.run_number }}
+
+      - name: Update application image for backend
+        run: |
+           kubectl set image deployment/itams-backend \
+           itams-app-backend=public.ecr.aws/w3l7a2t4/itams-backend:${{ github.run_number }}
 
       - name: check frontend deployment status
         run: kubectl rollout status deployment/itams-frontend --timeout=5m
