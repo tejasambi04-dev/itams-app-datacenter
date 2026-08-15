@@ -111,4 +111,41 @@ jobs:
           docker push \
             public.ecr.aws/w3l7a2t4/itams-frontend:${{ github.run_number }}
 
+  #===========================================
+  #deploy-frontend
+  #=========================================
+  backend-deploy:
+    name: deploy Backend
+    environment: dev
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: backend-deplpy
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > ~./kube/config
+          chmod 600 ~./kube/config
+      
+      - name: Verify connection to cluster
+        run: kubectl cluster-info
+
+      - name: backend
+        working-directory: ./backend
+        run: |
+          kubectl apply -f k8s 
+      
+      - name: frontend
+        working-directory: ./frontend
+        run: |
+          kubectl apply -f k8s
+
+      - name: check frontend deployment status
+        run: kubectl rollout status deployment/itams-frontend --timeout=5m
+
+      - name: check backend deployment status
+        run: kubectl rollout status deployment/itams-backend --timeout=5m
       
