@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: itams-backend
+  labels:
+    app: itams-app-backend
+spec:
+  replicas: 3
+  # 1. Rollout Strategy Configuration
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # Allows 1 extra pod above replica count during rollout
+      maxUnavailable: 0  # Guarantees 100% available pods during rollout
+  selector:
+    matchLabels:
+      app: itams-app-backend
+  template:
+    metadata:
+      labels:
+        app: itams-app-backend
+    spec:
+      containers:
+      - name: itams-app-backend
+        image: nginx:1.25.3  # Production best practice: use specific tag, not 'latest'
+        ports:
+        - containerPort: 3000
+
+        env:
+          - name: DB_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: itams-app-backend-settings
+                key: DB_HOST
+
+          - name: DB_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: itams-app-backend-settings
+                key: DB_PORT
+
+          - name: DB_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: itams-app-backend-settings
+                key: DB_NAME
+
+          - name: DB_USER
+            valueFrom:
+              configMapKeyRef:
+                name: itams-app-backend-settings
+                key: DB_USER
+
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: database-credentials
+                key: DB_PASSWORD
+        
+        # 2. Readiness Probe (Traffic Routing Check)
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3

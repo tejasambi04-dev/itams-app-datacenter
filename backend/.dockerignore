@@ -1,0 +1,49 @@
+# ============================================================
+# ITAMS Backend Docker Ignore
+# ============================================================
+
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Test files
+test/
+tests/
+test-api.js
+
+# Coverage
+coverage/
+
+# Runtime uploaded files
+uploads/*
+
+# Temporary files
+tmp/
+temp/
+
+# Development/IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docker files
+Dockerfile
+.dockerignore
+
+# Documentation
+README.md

@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Servers — ITAMS</title>
+  <meta name="description" content="IT Asset Management System - All Servers">
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    /* ── Page-specific tweaks ───────────────────────────── */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .filter-bar select {
+      width: auto;
+      min-width: 160px;
+      padding: 9px 14px;
+    }
+
+    .search-input-wrapper {
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .toolbar-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+
+    .toolbar-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .toolbar-row + .toolbar-row {
+      margin-top: 12px;
+    }
+
+    /* OS icon column */
+    .os-icon {
+      font-size: 18px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Roles cell */
+    .roles-cell {
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: default;
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    /* Service date urgency */
+    .date-urgent  { color: #ef4444; font-weight: 600; }
+    .date-warning { color: #f59e0b; font-weight: 600; }
+    .date-ok      { color: #10b981; }
+    .date-none    { color: var(--text-muted); }
+
+    /* Table count info */
+    .table-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0 14px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .table-meta strong { color: var(--text-primary); }
+
+    /* Action button group */
+    .action-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    /* Spinner overlay */
+    .table-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 48px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .empty-state .empty-icon {
+      font-size: 52px;
+      margin-bottom: 16px;
+      display: block;
+      opacity: 0.5;
+    }
+
+    .empty-state h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    /* Badge for maintenance */
+    .badge-maintenance {
+      background: rgba(124, 58, 237, 0.15);
+      color: #a78bfa;
+    }
+
+    /* Confirm modal specific */
+    .confirm-icon {
+      font-size: 48px;
+      display: block;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .confirm-body {
+      text-align: center;
+    }
+
+    .confirm-body h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .confirm-body p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+
+    .confirm-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    /* Sortable th */
+    th[data-sort] { cursor: pointer; user-select: none; }
+    th[data-sort]:hover { color: var(--text-primary); }
+    th[data-sort].sort-asc::after  { content: ' ↑'; color: var(--accent); }
+    th[data-sort].sort-desc::after { content: ' ↓'; color: var(--accent); }
+
+    /* Clickable row */
+    tbody tr.clickable { cursor: pointer; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <div class="main-content">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>📡 All Servers</h1>
+        <p>Monitor and manage your server infrastructure</p>
+      </div>
+      <div class="topbar-actions">
+        <div class="notif-bell" id="notif-bell-btn" onclick="toggleNotifPanel()" title="Notifications">
+          🔔
+          <span class="bell-badge" id="bell-badge" style="display:none">0</span>
+        </div>
+        <a href="new-server.html" class="btn btn-primary">
+          ➕ Add Server
+        </a>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="page-content fade-in">
+
+      <!-- ── Search & Filter Toolbar ─────────────────── -->
+      <div class="toolbar-card">
+        <!-- Row 1: Search + Filters -->
+        <div class="toolbar-row">
+          <div class="search-input-wrapper">
+            <span class="search-icon">🔍</span>
+            <input
+              type="text"
+              id="search-input"
+              placeholder="Search by name, IP, service tag, department, roles…"
+              autocomplete="off"
+            >
+          </div>
+
+          <select id="filter-os" title="Filter by OS type">
+            <option value="">All OS</option>
+            <option value="Linux">🐧 Linux</option>
+            <option value="Windows Server">🪟 Windows Server</option>
+          </select>
+
+          <select id="filter-status" title="Filter by Status">
+            <option value="">All Status</option>
+            <option value="online">Online</option>
+            <option value="offline">Offline</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="decommissioned">Decommissioned</option>
+          </select>
+        </div>
+
+        <!-- Row 2: Action Buttons -->
+        <div class="toolbar-row">
+          <button class="btn btn-primary" id="btn-search" onclick="applyFilters()">
+            🔍 Search
+          </button>
+          <button class="btn btn-secondary" id="btn-clear" onclick="clearFilters()">
+            ✕ Clear
+          </button>
+          <div style="flex:1"></div>
+          <button class="btn btn-success" onclick="handleExportCsv()">
+            ⬇️ Export CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Table Card ──────────────────────────────── -->
+      <div class="card" style="padding: 0; overflow: hidden;">
+
+        <!-- Meta row: count + pagination info -->
+        <div class="table-meta" style="padding: 14px 20px 0;">
+          <span id="table-count">Loading…</span>
+          <span id="pagination-info" style="font-size:12px;"></span>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container" style="border: none; border-radius: 0; margin-top: 4px;">
+          <table id="servers-table">
+            <thead>
+              <tr>
+                <th data-sort="id">ID</th>
+                <th data-sort="server_name">Server Name</th>
+                <th data-sort="os_type">OS Type</th>
+                <th data-sort="os_version">OS Version</th>
+                <th data-sort="ip_address">IP Address</th>
+                <th data-sort="location">Location</th>
+                <th data-sort="cpu">CPU</th>
+                <th data-sort="ram">RAM</th>
+                <th>Roles</th>
+                <th data-sort="status">Status</th>
+                <th data-sort="next_service_date">Next Service</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="servers-tbody">
+              <tr>
+                <td colspan="12">
+                  <div class="table-loading">
+                    <div class="spinner"></div> Loading servers…
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" id="pagination"></div>
+
+      </div><!-- /card -->
+
+    </main>
+  </div><!-- /main-content -->
+</div><!-- /layout -->
+
+<!-- ── Notification Side Panel ─────────────────────── -->
+<div id="notif-panel" style="
+  position:fixed; top:64px; right:0; width:360px; height:calc(100vh - 64px);
+  background:var(--bg-secondary); border-left:1px solid var(--border);
+  padding:20px; overflow-y:auto; z-index:200;
+  transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+    <h3 style="font-size:16px; font-weight:700;">Notifications</h3>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-secondary btn-sm" onclick="markAllRead()">Mark All Read</button>
+      <button class="btn btn-secondary btn-sm" onclick="toggleNotifPanel()">✕</button>
+    </div>
+  </div>
+  <div id="notif-panel-list"></div>
+</div>
+
+<!-- ── Delete Confirm Modal ────────────────────────── -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal" style="max-width:440px;">
+    <div class="confirm-body">
+      <span class="confirm-icon">🗑️</span>
+      <h3>Delete Server?</h3>
+      <p id="confirm-message">This action cannot be undone. The server record and all associated data will be permanently deleted.</p>
+      <div class="confirm-actions">
+        <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+        <button class="btn btn-danger" id="confirm-delete-btn" onclick="executeDelete()">
+          🗑️ Delete Server
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/notifications.js"></script>
+<script>
+// ─────────────────────────────────────────────────────────
+//  State
+// ─────────────────────────────────────────────────────────
+let allServers   = [];   // full data from API
+let filtered     = [];   // after search/filter
+let currentPage  = 1;
+const PAGE_SIZE  = 20;
+
+let sortCol      = 'id';
+let sortDir      = 'asc';  // 'asc' | 'desc'
+
+let pendingDeleteId   = null;
+let pendingDeleteName = null;
+
+let notifPanelOpen = false;
+
+// ─────────────────────────────────────────────────────────
+//  Boot
+// ─────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  setupSortHeaders();
+  setupSearchInput();
+  await loadServers();
+});
+
+// ─────────────────────────────────────────────────────────
+//  Load from API
+// ─────────────────────────────────────────────────────────
+async function loadServers() {
+  setTableLoading(true);
+  try {
+    const res = await api.servers.list();
+    if (!res.success) throw new Error(res.error || 'Failed to load servers');
+    allServers = res.data || [];
+    applyFilters();
+  } catch (err) {
+    showError('Could not load servers: ' + err.message);
+    setTableEmpty('Failed to load server list. Please refresh.');
+  } finally {
+    setTableLoading(false);
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+//  Search / Filter
+// ─────────────────────────────────────────────────────────
+function applyFilters() {
+  const q          = document.getElementById('search-input').value.trim().toLowerCase();
+  const osFilter   = document.getElementById('filter-os').value;
+  const statFilter = document.getElementById('filter-status').value;
+
+  filtered = allServers.filter(s => {
+    // Text search
+    if (q) {
+      const haystack = [
+        s.server_name, s.ip_address, s.service_tag,
+        s.department, s.roles, s.location, s.os_version
+      ].join(' ').toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+    // OS filter
+    if (osFilter && s.os_type !== osFilter) return false;
+    // Status filter
+    if (statFilter && (s.status || '').toLowerCase() !== statFilter.toLowerCase()) return false;
+    return true;
+  });
+
+  currentPage = 1;
+  sortData();
+  renderPage();
+  updateTableMeta();
+}
+
+function clearFilters() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('filter-os').value    = '';
+  document.getElementById('filter-status').value = '';
+  applyFilters();
+}
+
+// ─────────────────────────────────────────────────────────
+//  Sort
+// ─────────────────────────────────────────────────────────
+function setupSortHeaders() {
+  document.querySelectorAll('th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.sort;
+      if (sortCol === col) {
+        sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortCol = col;
+        sortDir = 'asc';
+      }
+      // Update header classes
+      document.querySelectorAll('th[data-sort]').forEach(h => {
+        h.classList.remove('sort-asc', 'sort-desc');
+      });
+      th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+      sortData();
+      renderPage();
+    });
+  });
+}
+
+function sortData() {
+  filtered.sort((a, b) => {
+    let va = a[sortCol] ?? '';
+    let vb = b[sortCol] ?? '';
+    // Numeric sort for id
+    if (sortCol === 'id') { va = Number(va); vb = Number(vb); }
+    // Date sort
+    if (sortCol === 'next_service_date') {
+      va = va ? new Date(va).getTime() : Infinity;
+      vb = vb ? new Date(vb).getTime() : Infinity;
+    }
+    if (va < vb) return sortDir === 'asc' ? -1 : 1;
+    if (va > vb) return sortDir === 'asc' ?  1 : -1;
+    return 0;
+  });
+}
+
+// ─────────────────────────────────────────────────────────
+//  Render
+// ─────────────────────────────────────────────────────────
+function renderPage() {
+  const tbody = document.getElementById('servers-tbody');
+
+  if (filtered.length === 0) {
+    setTableEmpty(
+      allServers.length === 0
+        ? 'No servers found. <a href="new-server.html" style="color:var(--accent)">Add your first server →</a>'
+        : 'No servers match your search. Try adjusting the filters.'
+    );
+    renderPagination();
+    return;
+  }
+
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const end   = start + PAGE_SIZE;
+  const page  = filtered.slice(start, end);
+
+  tbody.innerHTML = page.map(s => buildRow(s)).join('');
+  renderPagination();
+}
+
+function buildRow(s) {
+  const osIcon    = osEmoji(s.os_type);
+  const statusHtml = serverStatusBadge(s.status);
+  const rolesHtml = buildRolesCell(s.roles);
+  const dateHtml  = buildServiceDate(s.next_service_date);
+  const detailUrl = `asset-detail.html?id=${s.id}&type=server`;
+
+  return `
+    <tr class="clickable" onclick="location.href='${detailUrl}'" data-id="${s.id}">
+      <td class="mono" style="font-size:11px; color:var(--text-muted);">${s.id}</td>
+
+      <td>
+        <div style="font-weight:600; color:var(--text-primary);">${escHtml(s.server_name || '—')}</div>
+        ${s.service_tag ? `<div style="font-size:11px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;">${escHtml(s.service_tag)}</div>` : ''}
+      </td>
+
+      <td>
+        <span class="os-icon">${osIcon} <span style="font-size:12px; color:var(--text-secondary);">${escHtml(s.os_type || '—')}</span></span>
+      </td>
+
+      <td style="font-size:12px; color:var(--text-secondary);">${escHtml(s.os_version || '—')}</td>
+
+      <td class="mono" style="font-size:12px;">${escHtml(s.ip_address || '—')}</td>
+
+      <td style="font-size:13px; color:var(--text-secondary);">${escHtml(s.location || '—')}</td>
+
+      <td style="font-size:12px; color:var(--text-secondary); white-space:nowrap;">${escHtml(s.cpu || '—')}</td>
+
+      <td style="font-size:12px; color:var(--text-secondary); white-space:nowrap;">${escHtml(s.ram || '—')}</td>
+
+      <td>${rolesHtml}</td>
+
+      <td>${statusHtml}</td>
+
+      <td>${dateHtml}</td>
+
+      <td onclick="event.stopPropagation()">
+        <div class="action-group">
+          <a href="${detailUrl}" class="btn btn-secondary btn-sm" title="View details">
+            👁 View
+          </a>
+          <button
+            class="btn btn-danger btn-sm"
+            title="Delete server"
+            onclick="openConfirmModal(${s.id}, '${escAttr(s.server_name)}')"
+          >🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────
+//  Helpers — OS emoji
+// ─────────────────────────────────────────────────────────
+function osEmoji(osType) {
+  if (!osType) return '🖧';
+  const t = osType.toLowerCase();
+  if (t.includes('linux'))   return '🐧';
+  if (t.includes('windows')) return '🪟';
+  return '🖧';
+}
+
+// ─────────────────────────────────────────────────────────
+//  Helpers — Status badge (extended for servers)
+// ─────────────────────────────────────────────────────────
+function serverStatusBadge(status) {
+  if (!status) return '<span class="badge badge-pending">— Unknown</span>';
+  const s = status.toLowerCase();
+  const map = {
+    online:         { cls: 'active',      icon: '🟢' },
+    offline:        { cls: 'offline',     icon: '⚫' },
+    maintenance:    { cls: 'maintenance', icon: '🟡' },
+    decommissioned: { cls: 'retired',     icon: '🔴' }
+  };
+  const m = map[s] || { cls: 'pending', icon: '🔵' };
+  return `<span class="badge badge-${m.cls}">${m.icon} ${status}</span>`;
+}
+
+// ─────────────────────────────────────────────────────────
+//  Helpers — Roles cell with tooltip
+// ─────────────────────────────────────────────────────────
+function buildRolesCell(roles) {
+  if (!roles) return '<span style="color:var(--text-muted);">—</span>';
+  const full = escHtml(roles);
+  // Show truncated, tooltip on hover
+  return `<span class="roles-cell" title="${full}">${full}</span>`;
+}
+
+// ─────────────────────────────────────────────────────────
+//  Helpers — Service date with urgency colouring
+// ─────────────────────────────────────────────────────────
+function buildServiceDate(dateStr) {
+  if (!dateStr) return '<span class="date-none">—</span>';
+  const d    = new Date(dateStr);
+  const now  = new Date();
+  const days = Math.ceil((d - now) / 86400000);
+  const label = formatDate(dateStr);
+
+  if (days < 0)  return `<span class="date-urgent"  title="${days * -1}d overdue">⚠️ ${label}</span>`;
+  if (days <= 7) return `<span class="date-warning" title="Due in ${days}d">⏰ ${label}</span>`;
+  return `<span class="date-ok">${label}</span>`;
+}
+
+// ─────────────────────────────────────────────────────────
+//  Table meta info
+// ─────────────────────────────────────────────────────────
+function updateTableMeta() {
+  const total   = filtered.length;
+  const start   = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const end     = Math.min(currentPage * PAGE_SIZE, total);
+  const allCnt  = allServers.length;
+
+  document.getElementById('table-count').innerHTML =
+    total === allCnt
+      ? `Showing <strong>${start}–${end}</strong> of <strong>${total}</strong> servers`
+      : `Showing <strong>${start}–${end}</strong> of <strong>${total}</strong> filtered (${allCnt} total)`;
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  document.getElementById('pagination-info').textContent =
+    totalPages > 1 ? `Page ${currentPage} of ${totalPages}` : '';
+}
+
+// ─────────────────────────────────────────────────────────
+//  Pagination
+// ─────────────────────────────────────────────────────────
+function renderPagination() {
+  const container  = document.getElementById('pagination');
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+
+  if (totalPages <= 1) { container.innerHTML = ''; updateTableMeta(); return; }
+
+  let html = '';
+
+  // Prev
+  html += `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="goPage(${currentPage - 1})">‹</button>`;
+
+  // Page numbers with ellipsis
+  const pages = getPageRange(currentPage, totalPages);
+  let prev = null;
+  pages.forEach(p => {
+    if (prev !== null && p - prev > 1) {
+      html += `<span class="page-btn" style="cursor:default; border:none; color:var(--text-muted);">…</span>`;
+    }
+    html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`;
+    prev = p;
+  });
+
+  // Next
+  html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="goPage(${currentPage + 1})">›</button>`;
+
+  container.innerHTML = html;
+  updateTableMeta();
+}
+
+function getPageRange(current, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages = new Set([1, total, current]);
+  if (current > 1) pages.add(current - 1);
+  if (current < total) pages.add(current + 1);
+  return [...pages].sort((a, b) => a - b);
+}
+
+function goPage(page) {
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  if (page < 1 || page > totalPages) return;
+  currentPage = page;
+  renderPage();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─────────────────────────────────────────────────────────
+//  Loading / Empty states
+// ─────────────────────────────────────────────────────────
+function setTableLoading(on) {
+  if (on) {
+    document.getElementById('servers-tbody').innerHTML = `
+      <tr><td colspan="12">
+        <div class="table-loading">
+          <div class="spinner"></div> Loading servers…
+        </div>
+      </td></tr>`;
+    document.getElementById('table-count').textContent = '';
+    document.getElementById('pagination').innerHTML = '';
+  }
+}
+
+function setTableEmpty(msg) {
+  document.getElementById('servers-tbody').innerHTML = `
+    <tr><td colspan="12">
+      <div class="empty-state">
+        <span class="empty-icon">📡</span>
+        <h3>No Servers Found</h3>
+        <p>${msg}</p>
+        <a href="new-server.html" class="btn btn-primary">➕ Add Server</a>
+      </div>
+    </td></tr>`;
+  document.getElementById('table-count').innerHTML = 'Showing <strong>0</strong> servers';
+  document.getElementById('pagination').innerHTML  = '';
+  document.getElementById('pagination-info').textContent = '';
+}
+
+// ─────────────────────────────────────────────────────────
+//  Search input — live filter on Enter or after 400ms
+// ─────────────────────────────────────────────────────────
+function setupSearchInput() {
+  const input = document.getElementById('search-input');
+  let debounce;
+  input.addEventListener('input', () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(applyFilters, 400);
+  });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { clearTimeout(debounce); applyFilters(); }
+  });
+  // Also re-filter when dropdowns change
+  document.getElementById('filter-os').addEventListener('change', applyFilters);
+  document.getElementById('filter-status').addEventListener('change', applyFilters);
+}
+
+// ─────────────────────────────────────────────────────────
+//  CSV Export
+// ─────────────────────────────────────────────────────────
+async function handleExportCsv() {
+  const btn = document.querySelector('button.btn-success');
+  btn.disabled = true;
+  btn.textContent = '⏳ Exporting…';
+  try {
+    await downloadCsv({}, 'servers');
+    showSuccess('CSV exported successfully');
+  } catch (e) {
+    showError('Export failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '⬇️ Export CSV';
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+//  Delete
+// ─────────────────────────────────────────────────────────
+function openConfirmModal(id, name) {
+  pendingDeleteId   = id;
+  pendingDeleteName = name;
+  document.getElementById('confirm-message').textContent =
+    `"${name}" will be permanently removed. This cannot be undone.`;
+  document.getElementById('confirm-modal').classList.add('show');
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirm-modal').classList.remove('show');
+  pendingDeleteId   = null;
+  pendingDeleteName = null;
+}
+
+async function executeDelete() {
+  if (!pendingDeleteId) return;
+  const btn = document.getElementById('confirm-delete-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Deleting…';
+
+  try {
+    const res = await api.servers.delete(pendingDeleteId);
+    if (!res.success) throw new Error(res.error || 'Delete failed');
+    showSuccess(`Server "${pendingDeleteName}" deleted`);
+    closeConfirmModal();
+    // Remove from local state and re-render
+    allServers = allServers.filter(s => s.id !== pendingDeleteId);
+    applyFilters();
+  } catch (err) {
+    showError('Delete failed: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🗑️ Delete Server';
+  }
+}
+
+// Close modal on overlay click
+document.getElementById('confirm-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeConfirmModal();
+});
+
+// ─────────────────────────────────────────────────────────
+//  Notification Panel
+// ─────────────────────────────────────────────────────────
+async function toggleNotifPanel() {
+  const panel = document.getElementById('notif-panel');
+  notifPanelOpen = !notifPanelOpen;
+  panel.style.transform = notifPanelOpen ? 'translateX(0)' : 'translateX(100%)';
+  if (notifPanelOpen) await loadNotifPanel();
+}
+
+async function loadNotifPanel() {
+  const list = document.getElementById('notif-panel-list');
+  list.innerHTML = '<div class="spinner" style="margin:20px auto;display:block;"></div>';
+  try {
+    const res = await api.notifications.getUnread();
+    if (!res.data || !res.data.length) {
+      list.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px;">✅ All caught up!</p>';
+      return;
+    }
+    const icons = { overdue: '⚠️', due_soon: '🔔', warning: '⚡', info: 'ℹ️' };
+    list.innerHTML = res.data.map(n => `
+      <div style="padding:12px; margin-bottom:8px; background:var(--bg-card); border:1px solid var(--border);
+                  border-radius:var(--radius-md); border-left:3px solid ${n.type === 'overdue' ? 'var(--danger)' : 'var(--warning)'};">
+        <div style="font-size:13px; font-weight:600; margin-bottom:4px;">${icons[n.type] || 'ℹ'} ${escHtml(n.title)}</div>
+        <div style="font-size:12px; color:var(--text-muted);">${escHtml(n.message || '')}</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-top:6px;">${formatDateTime(n.created_at)}</div>
+      </div>
+    `).join('');
+  } catch (e) {
+    list.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px;">Could not load notifications.</p>';
+  }
+}
+
+async function markAllRead() {
+  await api.notifications.readAll();
+  document.getElementById('bell-badge').style.display = 'none';
+  document.getElementById('notif-panel-list').innerHTML =
+    '<p style="color:var(--text-muted); text-align:center; padding:20px;">✅ All caught up!</p>';
+  showSuccess('All notifications marked as read');
+}
+
+// ─────────────────────────────────────────────────────────
+//  Utilities
+// ─────────────────────────────────────────────────────────
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function escAttr(str) {
+  if (!str) return '';
+  return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>

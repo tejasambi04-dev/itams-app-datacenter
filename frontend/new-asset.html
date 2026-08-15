@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Asset — ITAMS</title>
+  <meta name="description" content="IT Asset Management System - Add New Asset">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    /* ── Page-specific styles ─────────────────────────────── */
+    .form-page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .form-page-header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      margin: 0 0 4px;
+      background: linear-gradient(135deg, var(--text-primary) 60%, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .form-page-header p {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin: 0;
+    }
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+    .breadcrumb a { color: var(--accent); text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb-sep { opacity: 0.4; }
+
+    /* ── Form Sections ────────────────────────────────────── */
+    .form-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      margin-bottom: 20px;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+    .form-section:focus-within {
+      border-color: rgba(99, 102, 241, 0.35);
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      flex-shrink: 0;
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .section-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .section-badge {
+      margin-left: auto;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(99,102,241,0.12);
+      color: var(--accent);
+      border: 1px solid rgba(99,102,241,0.2);
+    }
+
+    /* ── Form Grid ────────────────────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px 28px;
+    }
+    .form-grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px 28px;
+    }
+    .col-span-2 { grid-column: span 2; }
+    .col-span-3 { grid-column: span 3; }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .form-group label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .label-required {
+      color: #f87171;
+      font-size: 14px;
+      line-height: 1;
+    }
+    .label-tag {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 20px;
+      background: rgba(251,191,36,0.12);
+      color: #fbbf24;
+      border: 1px solid rgba(251,191,36,0.2);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      width: 100%;
+      box-sizing: border-box;
+      appearance: none;
+    }
+    .form-group select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+      background: var(--bg-secondary);
+    }
+    .form-group input::placeholder,
+    .form-group textarea::placeholder {
+      color: var(--text-muted);
+    }
+    .form-group input[readonly] {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+    .form-group textarea {
+      resize: vertical;
+      min-height: 90px;
+      line-height: 1.6;
+    }
+    .form-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+    .form-hint.important {
+      color: #fbbf24;
+    }
+
+    /* ── DateTime display ─────────────────────────────────── */
+    .datetime-display {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+    }
+    .datetime-icon { font-size: 18px; }
+    .datetime-text {
+      flex: 1;
+    }
+    .datetime-date {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .datetime-time {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .datetime-live {
+      font-size: 11px;
+      color: var(--accent);
+      background: rgba(99,102,241,0.1);
+      padding: 2px 8px;
+      border-radius: 20px;
+      border: 1px solid rgba(99,102,241,0.2);
+    }
+
+    /* ── PC Type Radio Cards ──────────────────────────────── */
+    .pc-type-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .radio-option {
+      position: relative;
+      cursor: pointer;
+    }
+    .radio-option input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .radio-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 28px 20px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--bg-input);
+      transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+      text-align: center;
+      user-select: none;
+    }
+    .radio-card:hover {
+      border-color: rgba(99,102,241,0.4);
+      background: rgba(99,102,241,0.04);
+    }
+    .radio-option input[type="radio"]:checked + .radio-card {
+      border-color: var(--accent);
+      background: rgba(99,102,241,0.1);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15), inset 0 0 0 1px rgba(99,102,241,0.2);
+    }
+    .radio-card-icon {
+      font-size: 40px;
+      line-height: 1;
+    }
+    .radio-card-label {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .radio-card-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .radio-check {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--bg-secondary);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    .radio-option input[type="radio"]:checked ~ .radio-check,
+    .radio-option input[type="radio"]:checked + .radio-card .radio-check {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .radio-check::after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: transparent;
+      transition: background 0.2s;
+    }
+    .radio-option input[type="radio"]:checked + .radio-card .radio-check::after {
+      background: #fff;
+    }
+
+    /* ── Battery Health Radios (inline) ───────────────────── */
+    .radio-inline-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .radio-inline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .radio-inline input[type="radio"] {
+      display: none;
+    }
+    .radio-pill {
+      padding: 8px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--bg-input);
+      transition: all 0.18s;
+      cursor: pointer;
+    }
+    .radio-inline input[type="radio"]:checked + .radio-pill {
+      border-color: var(--accent);
+      background: rgba(99,102,241,0.12);
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+    .radio-pill.good:has(input:checked),
+    .radio-inline.good input[type="radio"]:checked + .radio-pill {
+      border-color: #22c55e;
+      background: rgba(34,197,94,0.1);
+      color: #4ade80;
+    }
+    .radio-inline.fair input[type="radio"]:checked + .radio-pill {
+      border-color: #f59e0b;
+      background: rgba(245,158,11,0.1);
+      color: #fbbf24;
+    }
+    .radio-inline.danger input[type="radio"]:checked + .radio-pill {
+      border-color: #ef4444;
+      background: rgba(239,68,68,0.1);
+      color: #f87171;
+    }
+
+    /* ── Asset Status Radios ──────────────────────────────── */
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .status-option {
+      cursor: pointer;
+    }
+    .status-option input[type="radio"] {
+      display: none;
+    }
+    .status-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--bg-input);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: all 0.18s;
+      cursor: pointer;
+    }
+    .status-card:hover { border-color: rgba(99,102,241,0.3); }
+    .status-option input[type="radio"]:checked + .status-card {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .status-option.active input[type="radio"]:checked + .status-card   { border-color:#22c55e; background:rgba(34,197,94,0.08); color:#4ade80; }
+    .status-option.repair input[type="radio"]:checked + .status-card   { border-color:#f59e0b; background:rgba(245,158,11,0.08); color:#fbbf24; }
+    .status-option.retired input[type="radio"]:checked + .status-card  { border-color:#6b7280; background:rgba(107,114,128,0.08); color:#9ca3af; }
+    .status-option.lost input[type="radio"]:checked + .status-card     { border-color:#ef4444; background:rgba(239,68,68,0.08); color:#f87171; }
+
+    /* ── Hardware Section transitions ─────────────────────── */
+    .hw-section {
+      transition: opacity 0.25s ease, max-height 0.35s cubic-bezier(0.4,0,0.2,1);
+      overflow: hidden;
+    }
+    .hw-section.hidden {
+      display: none;
+    }
+
+    /* ── Divider ──────────────────────────────────────────── */
+    .form-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+
+    /* ── Bottom action bar ────────────────────────────────── */
+    .form-actions {
+      position: sticky;
+      bottom: 0;
+      background: rgba(15, 15, 25, 0.92);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 50;
+      margin: 0 -32px -32px;
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    }
+    .form-actions .btn-spacer { flex: 1; }
+
+    /* ── Validation state ─────────────────────────────────── */
+    .form-group.has-error input,
+    .form-group.has-error select,
+    .form-group.has-error textarea {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239,68,68,0.12);
+    }
+    .error-msg {
+      font-size: 11px;
+      color: #f87171;
+      margin-top: 2px;
+      display: none;
+    }
+    .form-group.has-error .error-msg { display: block; }
+
+    /* ── Saving overlay ───────────────────────────────────── */
+    #save-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+    }
+    #save-overlay.active { display: flex; }
+    #save-overlay .spinner {
+      width: 48px;
+      height: 48px;
+      border-width: 4px;
+    }
+    #save-overlay p {
+      color: var(--text-primary);
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    /* ── Tags input ───────────────────────────────────────── */
+    .tags-hint {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .tag-chip {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(99,102,241,0.1);
+      border: 1px solid rgba(99,102,241,0.2);
+      color: var(--accent);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .tag-chip:hover { background: rgba(99,102,241,0.2); }
+
+    /* ── Responsive ───────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .form-grid, .form-grid-3, .status-grid { grid-template-columns: 1fr 1fr; }
+      .col-span-2, .col-span-3 { grid-column: span 2; }
+      .pc-type-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .form-section { padding: 20px; }
+      .form-grid, .form-grid-3, .status-grid, .pc-type-grid { grid-template-columns: 1fr; }
+      .col-span-2, .col-span-3 { grid-column: span 1; }
+      .form-actions { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Save Overlay -->
+<div id="save-overlay">
+  <div class="spinner"></div>
+  <p id="save-overlay-msg">Saving asset…</p>
+</div>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <div class="main-content">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Add Asset</h1>
+        <p>Register a new PC or laptop in the inventory</p>
+      </div>
+      <div class="topbar-actions">
+        <a href="asset-list.html" class="btn btn-secondary">
+          ← All Assets
+        </a>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="page-content fade-in">
+
+      <!-- Breadcrumb -->
+      <div class="breadcrumb">
+        <a href="dashboard.html">Dashboard</a>
+        <span class="breadcrumb-sep">›</span>
+        <a href="asset-list.html">Assets</a>
+        <span class="breadcrumb-sep">›</span>
+        <span>Add New Asset</span>
+      </div>
+
+      <form id="asset-form" novalidate>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!-- SECTION 1 — Technician & Basic Info               -->
+        <!-- ═══════════════════════════════════════════════════ -->
+        <div class="form-section">
+          <div class="section-header">
+            <div class="section-icon">👤</div>
+            <div>
+              <div class="section-title">Technician &amp; Basic Info</div>
+              <div class="section-subtitle">Who is logging this asset and when</div>
+            </div>
+            <span class="section-badge">Required</span>
+          </div>
+
+          <div class="form-grid">
+
+            <!-- Technician -->
+            <div class="form-group" id="grp-technician">
+              <label for="technician_id">
+                Technician
+                <span class="label-required">*</span>
+              </label>
+              <select id="technician_id" name="technician_id" required>
+                <option value="">-- Select Technician --</option>
+              </select>
+              <span class="error-msg">Please select a technician.</span>
+            </div>
+
+            <!-- Date/Time -->
+            <div class="form-group">
+              <label>Date &amp; Time Logged</label>
+              <div class="datetime-display">
+                <div class="datetime-icon">🕐</div>
+                <div class="datetime-text">
+                  <div class="datetime-date" id="display-date">—</div>
+                  <div class="datetime-time" id="display-time">—</div>
+                </div>
+                <div class="datetime-live">Auto</div>
+              </div>
+              <input type="hidden" id="logged_at" name="logged_at">
+              <span class="form-hint">Captured automatically at page load</span>
+            </div>
+
+            <!-- PC Username -->
+            <div class="form-group">
+              <label for="pc_username">PC Username</label>
+              <input
+                type="text"
+                id="pc_username"
+                name="pc_username"
+                placeholder="e.g. john.doe"
+                autocomplete="off"
+                list="username-list"
+              >
+              <datalist id="username-list"></datalist>
+            </div>
+
+            <!-- PC Name -->
+            <div class="form-group">
+              <label for="pc_name">PC Name</label>
+              <input
+                type="text"
+                id="pc_name"
+                name="pc_name"
+                placeholder="e.g. DESK-FIN-001"
+                autocomplete="off"
+              >
+            </div>
+
+            <!-- PC Location -->
+            <div class="form-group">
+              <label for="location">PC Location</label>
+              <select id="location" name="location">
+                <option value="">-- Select Location --</option>
+              </select>
+            </div>
+
+            <!-- Department -->
+            <div class="form-group">
+              <label for="department">User Department</label>
+              <select id="department" name="department">
+                <option value="">-- Select Department --</option>
+              </select>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!-- SECTION 2 — PC Category                           -->
+        <!-- ═══════════════════════════════════════════════════ -->
+        <div class="form-section" id="section-type">
+          <div class="section-header">
+            <div class="section-icon">🖥</div>
+            <div>
+              <div class="section-title">PC Category</div>
+              <div class="section-subtitle">Select the type of asset being registered</div>
+            </div>
+            <span class="section-badge" id="type-badge" style="display:none;">Selected</span>
+          </div>
+
+          <input type="hidden" id="asset_type" name="asset_type" value="">
+
+          <div class="pc-type-grid">
+            <!-- Desktop Option -->
+            <label class="radio-option" id="opt-desktop">
+              <input type="radio" name="pc_type_radio" value="desktop">
+              <div class="radio-card">
+                <div class="radio-check">✓</div>
+                <div class="radio-card-icon">🖥</div>
+                <div class="radio-card-label">Desktop</div>
+                <div class="radio-card-desc">Tower / SFF / AIO workstation with separate peripherals</div>
+              </div>
+            </label>
+
+            <!-- Laptop Option -->
+            <label class="radio-option" id="opt-laptop">
+              <input type="radio" name="pc_type_radio" value="laptop">
+              <div class="radio-card">
+                <div class="radio-check">✓</div>
+                <div class="radio-card-icon">💻</div>
+                <div class="radio-card-label">Laptop</div>
+                <div class="radio-card-desc">Portable notebook, ultrabook, or business laptop</div>
+              </div>
+            </label>
+          </div>
+
+          <div id="type-error-msg" style="display:none; margin-top:12px; font-size:12px; color:#f87171;">
+            ⚠ Please select a PC type (Desktop or Laptop) to continue.
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!-- SECTION 3A — Desktop Hardware                     -->
+        <!-- ═══════════════════════════════════════════════════ -->
+        <div class="form-section hw-section hidden" id="section-desktop">
+          <div class="section-header">
+            <div class="section-icon" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">🖥</div>
+            <div>
+              <div class="section-title">Desktop Hardware Specifications</div>
+              <div class="section-subtitle">Internal components and peripherals</div>
+            </div>
+            <span class="section-badge" style="background:rgba(99,102,241,0.1); color: var(--accent);">Desktop</span>
+          </div>
+
+          <div class="form-grid-3">
+            <!-- CPU -->
+            <div class="form-group">
+              <label for="cpu">CPU / Processor</label>
+              <select id="cpu" name="cpu">
+                <option value="">-- Select CPU --</option>
+              </select>
+            </div>
+            <!-- RAM -->
+            <div class="form-group">
+              <label for="ram">RAM</label>
+              <select id="ram" name="ram">
+                <option value="">-- Select RAM --</option>
+              </select>
+            </div>
+            <!-- Motherboard -->
+            <div class="form-group">
+              <label for="motherboard">Motherboard</label>
+              <select id="motherboard" name="motherboard">
+                <option value="">-- Select Motherboard --</option>
+              </select>
+            </div>
+            <!-- PSU -->
+            <div class="form-group">
+              <label for="power_supply">Power Supply</label>
+              <select id="power_supply" name="power_supply">
+                <option value="">-- Select PSU --</option>
+              </select>
+            </div>
+            <!-- SSD -->
+            <div class="form-group">
+              <label for="ssd">SSD</label>
+              <select id="ssd" name="ssd">
+                <option value="">-- Select SSD --</option>
+              </select>
+            </div>
+            <!-- HDD -->
+            <div class="form-group">
+              <label for="hdd">HDD</label>
+              <select id="hdd" name="hdd">
+                <option value="">-- Select HDD --</option>
+              </select>
+            </div>
+            <!-- GFX -->
+            <div class="form-group">
+              <label for="gfx_card">Graphics Card</label>
+              <select id="gfx_card" name="gfx_card">
+                <option value="">-- Select GPU --</option>
+              </select>
+            </div>
+            <!-- Monitor -->
+            <div class="form-group">
+              <label for="monitor">Monitor</label>
+              <select id="monitor" name="monitor">
+                <option value="">-- Select Monitor --</option>
+              </select>
+            </div>
+            <!-- Keyboard -->
+            <div class="form-group">
+              <label for="keyboard">Keyboard</label>
+              <select id="keyboard" name="keyboard">
+                <option value="">-- Select Keyboard --</option>
+              </select>
+            </div>
+            <!-- Mouse -->
+            <div class="form-group">
+              <label for="mouse">Mouse</label>
+              <select id="mouse" name="mouse">
+                <option value="">-- Select Mouse --</option>
+              </select>
+            </div>
+            <!-- Headphones -->
+            <div class="form-group">
+              <label for="headphones">Headphones</label>
+              <select id="headphones" name="headphones">
+                <option value="">-- Select Headphones --</option>
+              </select>
+            </div>
+            <!-- UPS -->
+            <div class="form-group">
+              <label for="ups">UPS</label>
+              <input type="text" id="ups" name="ups" placeholder="e.g. APC Back-UPS 1500VA">
+            </div>
+            <!-- Webcam -->
+            <div class="form-group">
+              <label for="webcam">Webcam</label>
+              <input type="text" id="webcam" name="webcam" placeholder="e.g. Logitech C920">
+            </div>
+            <!-- Other Peripherals -->
+            <div class="form-group col-span-3">
+              <label for="other_peripherals_desktop">Other Peripherals</label>
+              <textarea
+                id="other_peripherals_desktop"
+                name="other_peripherals"
+                placeholder="List any other peripherals, e.g. USB hub, scanner, barcode reader…"
+                rows="3"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!-- SECTION 3B — Laptop Hardware                      -->
+        <!-- ═══════════════════════════════════════════════════ -->
+        <div class="form-section hw-section hidden" id="section-laptop">
+          <div class="section-header">
+            <div class="section-icon" style="background: linear-gradient(135deg, #06b6d4, #3b82f6);">💻</div>
+            <div>
+              <div class="section-title">Laptop Hardware Specifications</div>
+              <div class="section-subtitle">Make, model, components, and accessories</div>
+            </div>
+            <span class="section-badge" style="background:rgba(6,182,212,0.1); color:#22d3ee; border-color:rgba(6,182,212,0.25);">Laptop</span>
+          </div>
+
+          <div class="form-grid">
+            <!-- Make -->
+            <div class="form-group">
+              <label for="laptop_make">Make / Brand</label>
+              <select id="laptop_make" name="laptop_make">
+                <option value="">-- Select Brand --</option>
+              </select>
+            </div>
+            <!-- Model -->
+            <div class="form-group">
+              <label for="laptop_model">Model Number</label>
+              <input type="text" id="laptop_model" name="laptop_model" placeholder="e.g. ThinkPad X1 Carbon Gen 11">
+            </div>
+            <!-- Service Tag -->
+            <div class="form-group">
+              <label for="service_tag">
+                Service Tag / Serial No
+                <span class="label-tag">Important</span>
+              </label>
+              <input
+                type="text"
+                id="service_tag"
+                name="service_tag"
+                placeholder="e.g. 7ABCD12"
+                style="font-family: var(--font-mono, monospace); font-size:13px; letter-spacing: 0.06em;"
+              >
+              <span class="form-hint important">⚠ Critical for warranty lookups and support</span>
+            </div>
+            <!-- RAM -->
+            <div class="form-group">
+              <label for="laptop_ram">RAM</label>
+              <select id="laptop_ram" name="laptop_ram">
+                <option value="">-- Select RAM --</option>
+              </select>
+            </div>
+            <!-- SSD -->
+            <div class="form-group">
+              <label for="laptop_ssd">SSD Storage</label>
+              <select id="laptop_ssd" name="laptop_ssd">
+                <option value="">-- Select SSD --</option>
+              </select>
+            </div>
+            <!-- Battery Health -->
+            <div class="form-group">
+              <label>Battery Health</label>
+              <div class="radio-inline-group">
+                <label class="radio-inline good">
+                  <input type="radio" name="battery_health" value="good">
+                  <span class="radio-pill">🟢 Good</span>
+                </label>
+                <label class="radio-inline fair">
+                  <input type="radio" name="battery_health" value="fair">
+                  <span class="radio-pill">🟡 Fair</span>
+                </label>
+                <label class="radio-inline danger">
+                  <input type="radio" name="battery_health" value="replace">
+                  <span class="radio-pill">🔴 Replace</span>
+                </label>
+              </div>
+            </div>
+            <!-- Power Adapter -->
+            <div class="form-group">
+              <label for="power_adapter">Power Adapter</label>
+              <input type="text" id="power_adapter" name="power_adapter" placeholder="e.g. 65W USB-C, Dell 90W">
+            </div>
+            <!-- Mouse -->
+            <div class="form-group">
+              <label for="laptop_mouse">Mouse</label>
+              <select id="laptop_mouse" name="laptop_mouse">
+                <option value="">-- Select Mouse --</option>
+              </select>
+            </div>
+            <!-- Headphones -->
+            <div class="form-group">
+              <label for="laptop_headphones">Headphones</label>
+              <select id="laptop_headphones" name="laptop_headphones">
+                <option value="">-- Select Headphones --</option>
+              </select>
+            </div>
+            <!-- Docking Station -->
+            <div class="form-group">
+              <label for="docking_station">Docking Station</label>
+              <input type="text" id="docking_station" name="docking_station" placeholder="e.g. Dell WD19S, CalDigit TS3+">
+            </div>
+            <!-- Other Peripherals -->
+            <div class="form-group col-span-2">
+              <label for="other_peripherals_laptop">Other Peripherals</label>
+              <textarea
+                id="other_peripherals_laptop"
+                name="other_peripherals_laptop"
+                placeholder="List any other accessories, e.g. external monitor, bag, USB-C hub…"
+                rows="3"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!-- SECTION 4 — Software & Network                    -->
+        <!-- ═══════════════════════════════════════════════════ -->
+        <div class="form-section">
+          <div class="section-header">
+            <div class="section-icon" style="background: linear-gradient(135deg, #10b981, #059669);">🌐</div>
+            <div>
+              <div class="section-title">Software &amp; Network</div>
+              <div class="section-subtitle">Operating system, connectivity, and lifecycle details</div>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <!-- OS Version -->
+            <div class="form-group">
+              <label for="os_version">OS Version</label>
+              <select id="os_version" name="os_version">
+                <option value="">-- Select OS --</option>
+              </select>
+            </div>
+            <!-- IP Address -->
+            <div class="form-group">
+              <label for="ip_address">Network IP Address</label>
+              <input
+                type="text"
+                id="ip_address"
+                name="ip_address"
+                placeholder="192.168.1.x"
+                pattern="^(\d{1,3}\.){3}\d{1,3}$"
+              >
+            </div>
+            <!-- MAC Address -->
+            <div class="form-group">
+              <label for="mac_address">Network MAC Address</label>
+              <input
+                type="text"
+                id="mac_address"
+                name="mac_address"
+                placeholder="AA:BB:CC:DD:EE:FF"
+                style="font-family: var(--font-mono, monospace); font-size:13px; letter-spacing: 0.05em;"
+              >
+            </div>
+            <!-- Purchase Date -->
+            <div class="form-group">
+              <label for="purchase_date">Purchase Date</label>
+              <input type="date" id="purchase_date" name="purchase_date">
+            </div>
+            <!-- Warranty Expiry -->
+            <div class="form-group">
+              <label for="warranty_expiry">Warranty Expiry</label>
+              <input type="date" id="warranty_expiry" name="warranty_expiry">
+            </div>
+            <!-- Tags -->
+            <div class="form-group">
+              <label for="tags">Tags</label>
+              <input type="text" id="tags" name="tags" placeholder="finance, vip, remote-worker">
+              <div class="tags-hint">
+                <span class="tag-chip" onclick="addTag('vip')">vip</span>
+                <span class="tag-chip" onclick="addTag('remote')">remote</span>
+                <span class="tag-chip" onclick="addTag('finance')">finance</span>
+                <span class="tag-chip" onclick="addTag('dev')">dev</span>
+                <span class="tag-chip" onclick="addTag('management')">management</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-divider"></div>
+
+          <!-- Asset Status -->
+          <div class="form-group">
+            <label>Asset Status</label>
+            <div class="status-grid">
+              <label class="status-option active">
+                <input type="radio" name="status" value="active" checked>
+                <div class="status-card">🟢 Active</div>
+              </label>
+              <label class="status-option repair">
+                <input type="radio" name="status" value="repair">
+                <div class="status-card">🔧 Repair</div>
+              </label>
+              <label class="status-option retired">
+                <input type="radio" name="status" value="retired">
+                <div class="status-card">⚫ Retired</div>
+              </label>
+              <label class="status-option lost">
+                <input type="radio" name="status" value="lost">
+                <div class="status-card">❌ Lost</div>
+              </label>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!-- SECTION 5 — Service Schedule                      -->
+        <!-- ═══════════════════════════════════════════════════ -->
+        <div class="form-section">
+          <div class="section-header">
+            <div class="section-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">📅</div>
+            <div>
+              <div class="section-title">Service Schedule</div>
+              <div class="section-subtitle">Set maintenance reminder for this asset</div>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <!-- Next Service Date -->
+            <div class="form-group">
+              <label for="next_service_date">Next Service Date</label>
+              <input type="date" id="next_service_date" name="next_service_date">
+              <span class="form-hint">Leave blank to skip scheduling</span>
+            </div>
+            <!-- Service Interval -->
+            <div class="form-group">
+              <label for="service_interval">Service Interval</label>
+              <select id="service_interval" name="service_interval">
+                <option value="">-- Select Interval --</option>
+                <option value="1">Every 1 Month</option>
+                <option value="2">Every 2 Months</option>
+                <option value="3">Every 3 Months</option>
+                <option value="6">Every 6 Months</option>
+                <option value="12">Every 12 Months (Annual)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!-- SECTION 6 — Notes                                 -->
+        <!-- ═══════════════════════════════════════════════════ -->
+        <div class="form-section">
+          <div class="section-header">
+            <div class="section-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">📝</div>
+            <div>
+              <div class="section-title">Notes</div>
+              <div class="section-subtitle">Additional remarks or observations about this asset</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="notes">Notes</label>
+            <textarea
+              id="notes"
+              name="notes"
+              placeholder="Any additional information — e.g. known issues, custom configurations, user preferences, special setups…"
+              rows="5"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!-- Action Bar                                         -->
+        <!-- ═══════════════════════════════════════════════════ -->
+        <div class="form-actions">
+          <a href="asset-list.html" class="btn btn-secondary">
+            ✕ Cancel
+          </a>
+          <div class="btn-spacer"></div>
+          <button type="button" class="btn btn-success" id="btn-save-another" onclick="submitForm(true)">
+            ➕ Save &amp; Add Another
+          </button>
+          <button type="submit" class="btn btn-primary" id="btn-save">
+            💾 Save Asset
+          </button>
+        </div>
+
+      </form>
+
+    </main>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="js/api.js"></script>
+<script src="js/notifications.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════════
+// ITAMS — Add Asset Page Logic
+// ══════════════════════════════════════════════════════════════
+
+// ── State ───────────────────────────────────────────────────
+let selectedType = '';
+let _saveAnother = false;
+
+// ── DOM Ready ────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  initDateTime();
+  setupTypeRadios();
+  checkUrlQueryType();
+  await initSelects();
+  setupFormSubmit();
+});
+
+// ── 1. Auto Date/Time ────────────────────────────────────────
+function initDateTime() {
+  const now = new Date();
+  const iso = now.toISOString();
+  document.getElementById('logged_at').value = iso;
+
+  const dateOpts = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' };
+  const timeOpts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+  document.getElementById('display-date').textContent = now.toLocaleDateString('en-GB', dateOpts);
+  document.getElementById('display-time').textContent = now.toLocaleTimeString('en-GB', timeOpts);
+}
+
+// ── 2. Populate all selects on page load ─────────────────────
+async function initSelects() {
+  try {
+    // Technician
+    await populateTechnicianSelect(document.getElementById('technician_id'));
+
+    // Desktop hardware selects
+    const desktopSelects = [
+      ['cpu',          'cpu'],
+      ['ram',          'ram'],
+      ['motherboard',  'motherboard'],
+      ['power_supply', 'power_supply'],
+      ['ssd',          'ssd'],
+      ['hdd',          'hdd'],
+      ['gfx_card',     'gfx_card'],
+      ['monitor',      'monitor'],
+      ['keyboard',     'keyboard'],
+      ['mouse',        'mouse'],
+      ['headphones',   'headphones'],
+    ];
+    for (const [id, cat] of desktopSelects) {
+      const el = document.getElementById(id);
+      if (el) await populateSelect(el, cat);
+    }
+
+    // Laptop hardware selects
+    const laptopSelects = [
+      ['laptop_make',       'laptop_make'],
+      ['laptop_ram',        'ram'],
+      ['laptop_ssd',        'ssd'],
+      ['laptop_mouse',      'mouse'],
+      ['laptop_headphones', 'headphones'],
+    ];
+    for (const [id, cat] of laptopSelects) {
+      const el = document.getElementById(id);
+      if (el) await populateSelect(el, cat);
+    }
+
+    // Software & Network
+    await populateSelect(document.getElementById('os_version'), 'os_version');
+    await populateSelect(document.getElementById('location'),   'location');
+    await populateSelect(document.getElementById('department'), 'department');
+
+    // Username datalist (free text only)
+    // No preset category — the datalist stays empty, user types freely.
+
+  } catch (err) {
+    console.warn('[initSelects] Error:', err.message);
+    showError('Could not load presets. Check your connection.');
+  }
+}
+
+// ── 3. PC Type Radio Button Logic ────────────────────────────
+function setupTypeRadios() {
+  const radios = document.querySelectorAll('input[name="pc_type_radio"]');
+  radios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      setAssetType(radio.value);
+    });
+  });
+}
+
+function setAssetType(type) {
+  selectedType = type;
+  document.getElementById('asset_type').value = type;
+
+  const desktopSection = document.getElementById('section-desktop');
+  const laptopSection  = document.getElementById('section-laptop');
+  const typeBadge      = document.getElementById('type-badge');
+  const typeError      = document.getElementById('type-error-msg');
+
+  // Show/hide hardware sections
+  if (type === 'desktop') {
+    desktopSection.classList.remove('hidden');
+    laptopSection.classList.add('hidden');
+    typeBadge.style.display = '';
+    typeBadge.textContent = '🖥 Desktop Selected';
+  } else if (type === 'laptop') {
+    laptopSection.classList.remove('hidden');
+    desktopSection.classList.add('hidden');
+    typeBadge.style.display = '';
+    typeBadge.textContent = '💻 Laptop Selected';
+  }
+
+  // Clear type error if shown
+  typeError.style.display = 'none';
+
+  // Scroll hardware section into view smoothly
+  const target = type === 'desktop' ? desktopSection : laptopSection;
+  if (target) {
+    setTimeout(() => {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  }
+}
+
+// ── 4. Pre-select from URL query ?type=desktop|laptop ────────
+function checkUrlQueryType() {
+  const params = new URLSearchParams(window.location.search);
+  const type = (params.get('type') || '').toLowerCase().trim();
+  if (type === 'desktop' || type === 'laptop') {
+    const radio = document.querySelector(`input[name="pc_type_radio"][value="${type}"]`);
+    if (radio) {
+      radio.checked = true;
+      setAssetType(type);
+    }
+  }
+}
+
+// ── 5. Tags helper ────────────────────────────────────────────
+function addTag(tag) {
+  const input = document.getElementById('tags');
+  const current = input.value.trim();
+  const existing = current ? current.split(',').map(t => t.trim()) : [];
+  if (!existing.includes(tag)) {
+    existing.push(tag);
+    input.value = existing.join(', ');
+  }
+}
+
+// ── 6. Validation ─────────────────────────────────────────────
+function validateForm() {
+  let valid = true;
+
+  // Technician required
+  const techGrp = document.getElementById('grp-technician');
+  const techVal = document.getElementById('technician_id').value;
+  if (!techVal) {
+    techGrp.classList.add('has-error');
+    valid = false;
+  } else {
+    techGrp.classList.remove('has-error');
+  }
+
+  // Asset type required
+  if (!selectedType) {
+    document.getElementById('type-error-msg').style.display = 'block';
+    document.getElementById('section-type').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    valid = false;
+  }
+
+  return valid;
+}
+
+// ── 7. Collect form data ──────────────────────────────────────
+function collectFormData() {
+  const data = {
+    asset_type:    document.getElementById('asset_type').value,
+    technician_id: document.getElementById('technician_id').value,
+    logged_at:     document.getElementById('logged_at').value,
+    pc_username:   document.getElementById('pc_username').value.trim(),
+    pc_name:       document.getElementById('pc_name').value.trim(),
+    location:      document.getElementById('location').value,
+    department:    document.getElementById('department').value,
+    os_version:    document.getElementById('os_version').value,
+    ip_address:    document.getElementById('ip_address').value.trim(),
+    mac_address:   document.getElementById('mac_address').value.trim(),
+    purchase_date: document.getElementById('purchase_date').value,
+    warranty_expiry: document.getElementById('warranty_expiry').value,
+    status:        document.querySelector('input[name="status"]:checked')?.value || 'active',
+    tags:          document.getElementById('tags').value.trim(),
+    next_service_date: document.getElementById('next_service_date').value,
+    service_interval:  document.getElementById('service_interval').value,
+    notes:         document.getElementById('notes').value.trim(),
+  };
+
+  if (selectedType === 'desktop') {
+    Object.assign(data, {
+      cpu:          document.getElementById('cpu').value,
+      ram:          document.getElementById('ram').value,
+      motherboard:  document.getElementById('motherboard').value,
+      power_supply: document.getElementById('power_supply').value,
+      ssd:          document.getElementById('ssd').value,
+      hdd:          document.getElementById('hdd').value,
+      gfx_card:     document.getElementById('gfx_card').value,
+      monitor:      document.getElementById('monitor').value,
+      keyboard:     document.getElementById('keyboard').value,
+      mouse:        document.getElementById('mouse').value,
+      headphones:   document.getElementById('headphones').value,
+      ups:          document.getElementById('ups').value.trim(),
+      webcam:       document.getElementById('webcam').value.trim(),
+      other_peripherals: document.getElementById('other_peripherals_desktop').value.trim(),
+    });
+  }
+
+  if (selectedType === 'laptop') {
+    Object.assign(data, {
+      laptop_make:     document.getElementById('laptop_make').value,
+      laptop_model:    document.getElementById('laptop_model').value.trim(),
+      service_tag:     document.getElementById('service_tag').value.trim(),
+      ram:             document.getElementById('laptop_ram').value,
+      ssd:             document.getElementById('laptop_ssd').value,
+      battery_health:  document.querySelector('input[name="battery_health"]:checked')?.value || '',
+      power_adapter:   document.getElementById('power_adapter').value.trim(),
+      mouse:           document.getElementById('laptop_mouse').value,
+      headphones:      document.getElementById('laptop_headphones').value,
+      docking_station: document.getElementById('docking_station').value.trim(),
+      other_peripherals: document.getElementById('other_peripherals_laptop').value.trim(),
+    });
+  }
+
+  // Remove empty strings for cleaner payload
+  Object.keys(data).forEach(k => {
+    if (data[k] === '' || data[k] === null || data[k] === undefined) delete data[k];
+  });
+
+  return data;
+}
+
+// ── 8. Form submit ────────────────────────────────────────────
+function setupFormSubmit() {
+  document.getElementById('asset-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    submitForm(false);
+  });
+}
+
+async function submitForm(addAnother = false) {
+  _saveAnother = addAnother;
+
+  if (!validateForm()) return;
+
+  const overlay = document.getElementById('save-overlay');
+  const overlayMsg = document.getElementById('save-overlay-msg');
+  overlayMsg.textContent = 'Saving asset…';
+  overlay.classList.add('active');
+
+  // Disable buttons
+  document.getElementById('btn-save').disabled = true;
+  document.getElementById('btn-save-another').disabled = true;
+
+  try {
+    const data = collectFormData();
+    const res = await api.assets.create(data);
+
+    if (res.success) {
+      showSuccess('✅ Asset saved successfully!');
+
+      if (addAnother) {
+        overlayMsg.textContent = 'Asset saved! Resetting form…';
+        setTimeout(() => {
+          overlay.classList.remove('active');
+          resetForm();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 800);
+      } else {
+        overlayMsg.textContent = 'Asset saved! Redirecting…';
+        const newId = res.data?.id || res.id;
+        setTimeout(() => {
+          window.location.href = `asset-detail.html?id=${newId}`;
+        }, 800);
+      }
+    } else {
+      throw new Error(res.error || res.message || 'Unknown error');
+    }
+  } catch (err) {
+    overlay.classList.remove('active');
+    document.getElementById('btn-save').disabled = false;
+    document.getElementById('btn-save-another').disabled = false;
+    showError('❌ Failed to save asset: ' + err.message);
+  }
+}
+
+// ── 9. Reset form for "Add Another" ──────────────────────────
+function resetForm() {
+  document.getElementById('asset-form').reset();
+  document.getElementById('asset_type').value = '';
+  selectedType = '';
+
+  document.getElementById('section-desktop').classList.add('hidden');
+  document.getElementById('section-laptop').classList.add('hidden');
+  document.getElementById('type-badge').style.display = 'none';
+  document.getElementById('type-error-msg').style.display = 'none';
+
+  // Re-capture time
+  initDateTime();
+
+  // Clear validation states
+  document.querySelectorAll('.has-error').forEach(el => el.classList.remove('has-error'));
+
+  // Re-enable buttons
+  document.getElementById('btn-save').disabled = false;
+  document.getElementById('btn-save-another').disabled = false;
+}
+</script>
+</body>
+</html>

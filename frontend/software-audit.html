@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Software Audit — ITAMS</title>
+  <meta name="description" content="Upload Belarc HTML audit reports securely">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Software Audit</h1>
+        <p>Upload Belarc Advisor HTML audit reports</p>
+      </div>
+      <div class="topbar-actions">
+        <div class="notif-bell" id="notif-bell-btn" onclick="toggleNotifPanel()">🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span></div>
+      </div>
+    </header>
+
+    <main class="page-content fade-in">
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start;">
+
+        <!-- Upload Form -->
+        <div>
+          <div class="form-section">
+            <div class="form-section-title">📤 Upload Audit File</div>
+
+            <!-- Security Notice -->
+            <div class="alert alert-info" style="margin-bottom:20px;">
+              🔒 Files are stored securely outside the web root, verified with SHA-256 integrity checks, and served only via authenticated download links.
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Technician <span class="required">*</span></label>
+                <select id="technician_id">
+                  <option value="">-- Select Technician --</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Link to Asset</label>
+                <select id="asset_id">
+                  <option value="">-- Select Asset (optional) --</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Link to Server</label>
+                <select id="server_id">
+                  <option value="">-- Select Server (optional) --</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Audit Date</label>
+                <input type="text" id="audit-date-display" readonly style="opacity:0.7; cursor:default;">
+              </div>
+            </div>
+
+            <!-- Upload Zone -->
+            <div style="margin: 20px 0;">
+              <label>Belarc Audit File (.html) <span class="required">*</span></label>
+              <div class="upload-zone" id="upload-zone" onclick="document.getElementById('audit-file').click()">
+                <div class="upload-icon">📋</div>
+                <div class="upload-text">Click to select or drag & drop your Belarc .html audit file</div>
+                <div class="upload-hint">Only .html files accepted • Max 5 MB</div>
+                <div id="selected-file" style="margin-top:12px; display:none; font-size:13px; color:var(--accent-light); font-weight:600;"></div>
+              </div>
+              <input type="file" id="audit-file" accept=".html" style="display:none" onchange="onFileSelected(this)">
+            </div>
+
+            <div class="form-group" style="margin-top:16px;">
+              <label>Notes</label>
+              <textarea id="audit-notes" placeholder="Any additional notes about this audit..."></textarea>
+            </div>
+
+            <div style="display:flex; gap:12px; margin-top:20px;">
+              <button class="btn btn-primary" id="upload-btn" onclick="uploadAudit()">
+                📤 Upload Audit File
+              </button>
+              <button class="btn btn-secondary" onclick="resetForm()">
+                ↺ Reset
+              </button>
+            </div>
+
+            <div id="upload-result" style="margin-top:16px;"></div>
+          </div>
+        </div>
+
+        <!-- Recent Audits List -->
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📋 Recent Audit Files</div>
+              <button class="btn btn-secondary btn-sm" onclick="loadRecentAudits()">↻ Refresh</button>
+            </div>
+            <div id="audit-list">
+              <div style="text-align:center; padding:24px; color:var(--text-muted);">
+                <div class="spinner" style="margin:0 auto 12px;"></div>
+                Loading…
+              </div>
+            </div>
+          </div>
+
+          <!-- Security Info Card -->
+          <div class="card" style="margin-top:16px;">
+            <div class="card-title" style="margin-bottom:16px;">🔐 File Security Controls</div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="display:flex; gap:10px; align-items:flex-start; font-size:13px;">
+                <span style="font-size:18px;">✅</span>
+                <div><strong>Type Validation</strong><br><span style="color:var(--text-muted)">Only .html files accepted (MIME + extension checked)</span></div>
+              </div>
+              <div style="display:flex; gap:10px; align-items:flex-start; font-size:13px;">
+                <span style="font-size:18px;">✅</span>
+                <div><strong>Size Limit</strong><br><span style="color:var(--text-muted)">Maximum 5 MB per upload</span></div>
+              </div>
+              <div style="display:flex; gap:10px; align-items:flex-start; font-size:13px;">
+                <span style="font-size:18px;">✅</span>
+                <div><strong>Hash-Based Naming</strong><br><span style="color:var(--text-muted)">Stored as SHA-256 hash, not original filename</span></div>
+              </div>
+              <div style="display:flex; gap:10px; align-items:flex-start; font-size:13px;">
+                <span style="font-size:18px;">✅</span>
+                <div><strong>Outside Web Root</strong><br><span style="color:var(--text-muted)">Files not accessible via direct URL</span></div>
+              </div>
+              <div style="display:flex; gap:10px; align-items:flex-start; font-size:13px;">
+                <span style="font-size:18px;">✅</span>
+                <div><strong>Forced Download</strong><br><span style="color:var(--text-muted)">Content-Disposition: attachment prevents execution</span></div>
+              </div>
+              <div style="display:flex; gap:10px; align-items:flex-start; font-size:13px;">
+                <span style="font-size:18px;">✅</span>
+                <div><strong>Integrity Verification</strong><br><span style="color:var(--text-muted)">SHA-256 re-verified on every download</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/notifications.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('audit-date-display').value =
+    new Date().toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+
+  await populateTechnicianSelect(document.getElementById('technician_id'));
+  await loadAssetsForSelect();
+  await loadServersForSelect();
+  await loadRecentAudits();
+  setupDragDrop();
+});
+
+async function loadAssetsForSelect() {
+  const res = await api.assets.list();
+  const sel = document.getElementById('asset_id');
+  sel.innerHTML = '<option value="">-- Select Asset (optional) --</option>';
+  if (res.success) {
+    res.data.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a.id;
+      opt.textContent = `${a.id} — ${a.pc_name || a.pc_username || 'Unknown'} (${a.asset_type})`;
+      sel.appendChild(opt);
+    });
+  }
+}
+
+async function loadServersForSelect() {
+  const res = await api.servers.list();
+  const sel = document.getElementById('server_id');
+  sel.innerHTML = '<option value="">-- Select Server (optional) --</option>';
+  if (res.success) {
+    res.data.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = `${s.id} — ${s.server_name}`;
+      sel.appendChild(opt);
+    });
+  }
+}
+
+async function loadRecentAudits() {
+  const list = document.getElementById('audit-list');
+  list.innerHTML = '<div style="text-align:center;padding:16px;"><div class="spinner" style="margin:auto;"></div></div>';
+  const res = await api.audits.list();
+  if (!res.success || !res.data.length) {
+    list.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:20px;">No audit files uploaded yet.</p>';
+    return;
+  }
+  list.innerHTML = res.data.map(a => `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px;border-bottom:1px solid var(--border);">
+      <div style="font-size:28px;">📄</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${a.original_filename}">${a.original_filename}</div>
+        <div style="font-size:11px;color:var(--text-muted);">
+          ${a.asset_id || a.server_id || 'No asset linked'} &nbsp;•&nbsp;
+          ${formatDateTime(a.audit_date)} &nbsp;•&nbsp;
+          ${formatBytes(a.file_size)}
+        </div>
+        <div style="font-size:10px;color:var(--text-muted);font-family:monospace;margin-top:2px;" title="SHA-256: ${a.file_hash}">SHA256: ${(a.file_hash||'').substring(0,16)}…</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <button class="btn btn-secondary btn-sm" onclick="downloadAudit(${a.id}, '${a.original_filename.replace(/'/g, "\\'")}')">⬇ Download</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteAudit(${a.id})">🗑 Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+let selectedFile = null;
+
+function onFileSelected(input) {
+  if (!input.files.length) return;
+  const file = input.files[0];
+  if (!file.name.endsWith('.html')) {
+    showError('Only .html files are accepted');
+    input.value = '';
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    showError('File too large. Maximum size is 5 MB');
+    input.value = '';
+    return;
+  }
+  selectedFile = file;
+  const display = document.getElementById('selected-file');
+  display.textContent = `📄 ${file.name} (${formatBytes(file.size)})`;
+  display.style.display = 'block';
+  document.getElementById('upload-zone').style.borderColor = 'var(--success)';
+}
+
+function setupDragDrop() {
+  const zone = document.getElementById('upload-zone');
+  zone.addEventListener('dragover', e => {
+    e.preventDefault();
+    zone.classList.add('drag-over');
+  });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      const input = document.getElementById('audit-file');
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      onFileSelected(input);
+    }
+  });
+}
+
+async function uploadAudit() {
+  if (!selectedFile) { showError('Please select an audit .html file first'); return; }
+  const techId = document.getElementById('technician_id').value;
+  if (!techId) { showError('Please select a technician'); return; }
+
+  const btn = document.getElementById('upload-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Uploading…';
+
+  const form = new FormData();
+  form.append('auditFile', selectedFile);
+  form.append('technician_id', techId);
+  form.append('asset_id', document.getElementById('asset_id').value);
+  form.append('server_id', document.getElementById('server_id').value);
+  form.append('notes', document.getElementById('audit-notes').value);
+
+  try {
+    const res = await api.audits.upload(form);
+    if (res.success) {
+      document.getElementById('upload-result').innerHTML = `
+        <div class="alert alert-success">
+          ✅ Audit file uploaded successfully!<br>
+          <span style="font-size:12px;font-family:monospace;">SHA-256: ${res.fileHash}</span>
+        </div>`;
+      showSuccess('Audit file uploaded securely!');
+      resetForm();
+      await loadRecentAudits();
+    } else {
+      showError(res.error || 'Upload failed');
+    }
+  } catch (err) {
+    showError('Upload failed: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '📤 Upload Audit File';
+  }
+}
+
+async function downloadAudit(id, filename) {
+  try {
+    const res = await api.audits.download(id);
+    if (!res.ok) { showError('Download failed or file integrity check failed'); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    showSuccess('Download started');
+  } catch (err) {
+    showError('Download error: ' + err.message);
+  }
+}
+
+async function deleteAudit(id) {
+  if (!confirm('Delete this audit record and file permanently?')) return;
+  try {
+    const res = await api.audits.delete(id);
+    if (res.success) {
+      showSuccess('Audit record deleted');
+      await loadRecentAudits();
+    }
+  } catch (err) {
+    showError('Delete failed: ' + err.message);
+  }
+}
+
+function resetForm() {
+  selectedFile = null;
+  document.getElementById('audit-file').value = '';
+  document.getElementById('selected-file').style.display = 'none';
+  document.getElementById('upload-zone').style.borderColor = '';
+  document.getElementById('audit-notes').value = '';
+  document.getElementById('upload-result').innerHTML = '';
+}
+</script>
+</body>
+</html>

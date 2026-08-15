@@ -1,0 +1,110 @@
+name: Deploy Dev
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+
+  # ==========================================================
+  # Frontend Docker Build and Push
+  # ==========================================================
+
+  frontend-build-docker:
+    name: Build and Push Frontend
+    environment: dev
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build frontend Docker image
+        working-directory: ./frontend
+        run: |
+          docker build \
+            -t itams-frontend:${{ github.run_number }} \
+            .
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: ap-south-1
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+
+      - name: Verify AWS credentials
+        run: aws sts get-caller-identity
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Tag Docker image
+        run: |
+          docker tag \
+            itams-frontend:${{ github.run_number }} \
+            ${{ steps.login-ecr.outputs.registry }}/itams-frontend:${{ github.run_number }}
+
+      - name: Push image to ECR
+        run: |
+          docker push \
+            ${{ steps.login-ecr.outputs.registry }}/itams-frontend:${{ github.run_number }}
+
+
+  # ==========================================================
+  # Backend Docker Build and Push
+  # ==========================================================
+
+  backend-build-docker:
+    name: Build and Push Backend
+    environment: dev
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build backend Docker image
+        working-directory: ./backend
+        run: |
+          docker build \
+            -t itams-backend:${{ github.run_number }} \
+            .
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: ap-south-1
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+
+      - name: Verify AWS credentials
+        run: aws sts get-caller-identity
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Tag Docker image
+        run: |
+          docker tag \
+            itams-backend:${{ github.run_number }} \
+            ${{ steps.login-ecr.outputs.registry }}/itams-backend:${{ github.run_number }}
+
+      - name: Push image to ECR
+        run: |
+          docker push \
+            ${{ steps.login-ecr.outputs.registry }}/itams-backend:${{ github.run_number }}
+
+      

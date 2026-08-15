@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — ITAMS</title>
+  <meta name="description" content="IT Asset Management System - Dashboard Overview">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <div class="main-content">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Dashboard</h1>
+        <p id="greeting">Loading…</p>
+      </div>
+      <div class="topbar-actions">
+        <div class="notif-bell" id="notif-bell-btn" onclick="toggleNotifPanel()" title="Notifications">
+          🔔
+          <span class="bell-badge" id="bell-badge" style="display:none">0</span>
+        </div>
+        <a href="new-asset.html" class="btn btn-primary">
+          ➕ Add Asset
+        </a>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="page-content fade-in">
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid" id="kpi-grid">
+        <div class="kpi-card accent">
+          <span class="kpi-icon">🖥</span>
+          <span class="kpi-value" id="kpi-total">—</span>
+          <span class="kpi-label">Total Assets</span>
+        </div>
+        <div class="kpi-card success">
+          <span class="kpi-icon">💻</span>
+          <span class="kpi-value" id="kpi-desktops">—</span>
+          <span class="kpi-label">Desktops Active</span>
+        </div>
+        <div class="kpi-card info">
+          <span class="kpi-icon">🎒</span>
+          <span class="kpi-value" id="kpi-laptops">—</span>
+          <span class="kpi-label">Laptops Active</span>
+        </div>
+        <div class="kpi-card accent">
+          <span class="kpi-icon">🖧</span>
+          <span class="kpi-value" id="kpi-servers">—</span>
+          <span class="kpi-label">Servers Online</span>
+        </div>
+        <div class="kpi-card danger">
+          <span class="kpi-icon">⚠️</span>
+          <span class="kpi-value" id="kpi-overdue">—</span>
+          <span class="kpi-label">Overdue Services</span>
+        </div>
+        <div class="kpi-card warning">
+          <span class="kpi-icon">🔔</span>
+          <span class="kpi-value" id="kpi-duesoon">—</span>
+          <span class="kpi-label">Due This Week</span>
+        </div>
+        <div class="kpi-card success">
+          <span class="kpi-icon">📋</span>
+          <span class="kpi-value" id="kpi-audits">—</span>
+          <span class="kpi-label">Software Audits</span>
+        </div>
+        <div class="kpi-card warning">
+          <span class="kpi-icon">🔔</span>
+          <span class="kpi-value" id="kpi-notifs">—</span>
+          <span class="kpi-label">Unread Alerts</span>
+        </div>
+      </div>
+
+      <!-- Main Grid -->
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+
+        <!-- Recent Assets -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🖥 Recent Assets</div>
+            <a href="asset-list.html" class="btn btn-secondary btn-sm">View All</a>
+          </div>
+          <div class="table-container">
+            <table id="recent-assets-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Dept</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="recent-assets-body">
+                <tr><td colspan="5" style="text-align:center; color: var(--text-muted)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Upcoming Services -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📅 Upcoming Services</div>
+            <a href="scheduler.html" class="btn btn-secondary btn-sm">Scheduler</a>
+          </div>
+          <div id="upcoming-list" style="display:flex; flex-direction:column; gap:8px;">
+            <p style="color:var(--text-muted); font-size:14px;">Loading…</p>
+          </div>
+        </div>
+
+        <!-- Recent Servers -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🖧 Server Status</div>
+            <a href="server-list.html" class="btn btn-secondary btn-sm">View All</a>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>OS</th>
+                  <th>IP</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="server-body">
+                <tr><td colspan="4" style="text-align:center; color: var(--text-muted)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⚡ Quick Actions</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <a href="new-asset.html?type=desktop" class="btn btn-secondary" style="justify-content:center; padding:16px;">
+              🖥<br><span style="font-size:12px; margin-top:6px; display:block">Add Desktop</span>
+            </a>
+            <a href="new-asset.html?type=laptop" class="btn btn-secondary" style="justify-content:center; padding:16px;">
+              💻<br><span style="font-size:12px; margin-top:6px; display:block">Add Laptop</span>
+            </a>
+            <a href="new-server.html" class="btn btn-secondary" style="justify-content:center; padding:16px;">
+              🖧<br><span style="font-size:12px; margin-top:6px; display:block">Add Server</span>
+            </a>
+            <a href="software-audit.html" class="btn btn-secondary" style="justify-content:center; padding:16px;">
+              📋<br><span style="font-size:12px; margin-top:6px; display:block">Upload Audit</span>
+            </a>
+            <a href="reports.html" class="btn btn-secondary" style="justify-content:center; padding:16px;">
+              📈<br><span style="font-size:12px; margin-top:6px; display:block">Reports</span>
+            </a>
+            <a href="scheduler.html" class="btn btn-secondary" style="justify-content:center; padding:16px;">
+              📅<br><span style="font-size:12px; margin-top:6px; display:block">Scheduler</span>
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Notification Panel -->
+<div id="notif-panel" style="
+  position:fixed; top:64px; right:0; width:360px; height:calc(100vh - 64px);
+  background:var(--bg-secondary); border-left:1px solid var(--border);
+  padding:20px; overflow-y:auto; z-index:200;
+  transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+    <h3 style="font-size:16px; font-weight:700;">Notifications</h3>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-secondary btn-sm" onclick="markAllRead()">Mark All Read</button>
+      <button class="btn btn-secondary btn-sm" onclick="toggleNotifPanel()">✕</button>
+    </div>
+  </div>
+  <div id="notif-panel-list"></div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/notifications.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  // Greeting
+  const hr = new Date().getHours();
+  const greet = hr < 12 ? 'Good Morning' : hr < 18 ? 'Good Afternoon' : 'Good Evening';
+  document.getElementById('greeting').textContent = `${greet} — ${new Date().toLocaleDateString('en-GB', {weekday:'long', day:'2-digit', month:'long', year:'numeric'})}`;
+
+  await loadDashboard();
+});
+
+async function loadDashboard() {
+  try {
+    // Load stats
+    const statsRes = await api.reports.stats();
+    if (statsRes.success) {
+      const d = statsRes.data;
+      document.getElementById('kpi-total').textContent    = d.total_assets;
+      document.getElementById('kpi-desktops').textContent = d.desktops;
+      document.getElementById('kpi-laptops').textContent  = d.laptops;
+      document.getElementById('kpi-servers').textContent  = d.servers;
+      document.getElementById('kpi-overdue').textContent  = d.overdue_services;
+      document.getElementById('kpi-duesoon').textContent  = d.due_soon;
+      document.getElementById('kpi-audits').textContent   = d.total_audits;
+      document.getElementById('kpi-notifs').textContent   = d.unread_notifications;
+
+      // Update bell badge
+      const bellBadge = document.getElementById('bell-badge');
+      if (d.unread_notifications > 0) {
+        bellBadge.textContent = d.unread_notifications;
+        bellBadge.style.display = 'flex';
+      }
+    }
+
+    // Recent assets
+    const assetsRes = await api.assets.list({ q: '' });
+    if (assetsRes.success) {
+      const tbody = document.getElementById('recent-assets-body');
+      const recent = assetsRes.data.slice(0, 8);
+      if (recent.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:24px;">No assets yet. <a href="new-asset.html" style="color:var(--accent)">Add first asset →</a></td></tr>';
+      } else {
+        tbody.innerHTML = recent.map(a => `
+          <tr onclick="location.href='asset-detail.html?id=${a.id}'" style="cursor:pointer;">
+            <td class="mono" style="font-size:11px;">${a.id}</td>
+            <td><strong>${a.pc_name || a.pc_username || '—'}</strong><br><span style="color:var(--text-muted);font-size:11px;">${a.pc_username || ''}</span></td>
+            <td>${statusBadge(a.asset_type)}</td>
+            <td style="color:var(--text-secondary)">${a.department || '—'}</td>
+            <td>${statusBadge(a.status)}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Upcoming services
+    const schedRes = await api.schedules.list({ status: 'pending' });
+    if (schedRes.success) {
+      const list = document.getElementById('upcoming-list');
+      const upcoming = schedRes.data.slice(0, 6);
+      if (upcoming.length === 0) {
+        list.innerHTML = '<p style="color:var(--text-muted); font-size:14px;">No upcoming services scheduled.</p>';
+      } else {
+        list.innerHTML = upcoming.map(s => {
+          const daysUntil = Math.ceil((new Date(s.scheduled_date) - new Date()) / 86400000);
+          const urgency = daysUntil < 0 ? 'danger' : daysUntil <= 3 ? 'warning' : 'success';
+          return `
+            <div style="display:flex; align-items:center; gap:12px; padding:10px 12px; background:var(--bg-input); border-radius:var(--radius-md); border:1px solid var(--border);">
+              <div style="width:40px; height:40px; border-radius:var(--radius-sm); background:var(--bg-card); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">
+                ${daysUntil < 0 ? '⚠️' : daysUntil <= 3 ? '⏰' : '📅'}
+              </div>
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.service_type}</div>
+                <div style="font-size:11px; color:var(--text-muted);">${s.asset_name || s.asset_id || s.server_id || '—'}</div>
+              </div>
+              <div style="text-align:right; flex-shrink:0;">
+                <div class="badge badge-${urgency}" style="font-size:11px;">${daysUntil < 0 ? 'Overdue' : daysUntil === 0 ? 'Today' : `${daysUntil}d`}</div>
+                <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">${formatDate(s.scheduled_date)}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    // Server status
+    const serverRes = await api.servers.list();
+    if (serverRes.success) {
+      const tbody = document.getElementById('server-body');
+      const servers = serverRes.data.slice(0, 6);
+      if (servers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:24px;">No servers yet. <a href="new-server.html" style="color:var(--accent)">Add server →</a></td></tr>';
+      } else {
+        tbody.innerHTML = servers.map(s => `
+          <tr onclick="location.href='asset-detail.html?id=${s.id}&type=server'" style="cursor:pointer;">
+            <td><strong>${s.server_name}</strong></td>
+            <td style="font-size:12px; color:var(--text-secondary)">${s.os_type}</td>
+            <td class="mono" style="font-size:12px">${s.ip_address || '—'}</td>
+            <td>${statusBadge(s.status)}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+  } catch (err) {
+    showError('Dashboard load error: ' + err.message);
+  }
+}
+
+let notifPanelOpen = false;
+async function toggleNotifPanel() {
+  const panel = document.getElementById('notif-panel');
+  notifPanelOpen = !notifPanelOpen;
+  panel.style.transform = notifPanelOpen ? 'translateX(0)' : 'translateX(100%)';
+  if (notifPanelOpen) await loadNotifPanel();
+}
+
+async function loadNotifPanel() {
+  const list = document.getElementById('notif-panel-list');
+  list.innerHTML = '<div class="spinner" style="margin:20px auto;display:block;"></div>';
+  const res = await api.notifications.getUnread();
+  if (!res.data.length) {
+    list.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px;">✅ All caught up!</p>';
+    return;
+  }
+  const icons = { overdue:'⚠️', due_soon:'🔔', warning:'⚡', info:'ℹ️' };
+  list.innerHTML = res.data.map(n => `
+    <div style="padding:12px; margin-bottom:8px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-md); border-left:3px solid ${n.type==='overdue'?'var(--danger)':'var(--warning)'};">
+      <div style="font-size:13px; font-weight:600; margin-bottom:4px;">${icons[n.type]||'ℹ'} ${n.title}</div>
+      <div style="font-size:12px; color:var(--text-muted);">${n.message||''}</div>
+      <div style="font-size:10px; color:var(--text-muted); margin-top:6px;">${formatDateTime(n.created_at)}</div>
+    </div>
+  `).join('');
+}
+
+async function markAllRead() {
+  await api.notifications.readAll();
+  document.getElementById('bell-badge').style.display = 'none';
+  document.getElementById('kpi-notifs').textContent = '0';
+  document.getElementById('notif-panel-list').innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px;">✅ All caught up!</p>';
+  showSuccess('All notifications marked as read');
+}
+</script>
+</body>
+</html>

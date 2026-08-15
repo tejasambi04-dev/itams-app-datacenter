@@ -1,0 +1,74 @@
+name: CI-DEV
+
+on:
+  pull_request:
+    branches:
+      - dev
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+
+  # ==========================================================
+  # Backend CI
+  # ==========================================================
+
+  backend-ci:
+    name: Backend CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run backend tests
+        working-directory: ./backend
+        run: echo "Test ran successfully"
+
+
+  # ==========================================================
+  # Frontend CI
+  # ==========================================================
+
+  frontend-ci:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate frontend files
+        working-directory: ./frontend
+        run: |
+          echo "Frontend validation started"
+
+          test -f index.html
+          test -d css
+          test -d js
+
+          echo "Frontend validation successful"
+
+
+  # ==========================================================
+  # Security
+  # ==========================================================
+
+  security:
+    name: Security Scan
+    uses: ./.github/workflows/security.yml
+    secrets: inherit

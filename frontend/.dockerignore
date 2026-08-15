@@ -1,0 +1,26 @@
+# ============================================================
+# ITAMS Frontend Docker Ignore
+# ============================================================
+
+# Development/IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docker files
+Dockerfile
+.dockerignore
+
+# Documentation
+README.md
+
+# Temporary files
+tmp/
+temp/

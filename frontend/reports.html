@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports &amp; Export — ITAMS</title>
+  <meta name="description" content="Search and export IT asset data as CSV">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Reports &amp; Export</h1>
+        <p>Search across all inventory data and export to CSV</p>
+      </div>
+      <div class="topbar-actions">
+        <div class="notif-bell" onclick="window.location.href='dashboard.html'">🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span></div>
+      </div>
+    </header>
+
+    <main class="page-content fade-in">
+
+      <!-- Search Panel -->
+      <div class="form-section" style="margin-bottom:20px;">
+        <div class="form-section-title">🔍 Search Filters</div>
+
+        <div class="tabs" style="margin-bottom:20px;">
+          <button class="tab-btn active" id="tab-assets" onclick="switchSection('assets')">🖥 PCs & Laptops</button>
+          <button class="tab-btn" id="tab-servers" onclick="switchSection('servers')">🖧 Servers</button>
+          <button class="tab-btn" id="tab-all" onclick="switchSection('all')">📋 All Records</button>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Search (any field)</label>
+            <div class="search-input-wrapper">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="search-q" placeholder="Name, username, department, IP, ID, model…" style="padding-left:40px;">
+            </div>
+          </div>
+
+          <div class="form-group" id="filter-type-group">
+            <label>Asset Type</label>
+            <select id="filter-type">
+              <option value="">All Types</option>
+              <option value="desktop">Desktop</option>
+              <option value="laptop">Laptop</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Department</label>
+            <select id="filter-dept">
+              <option value="">All Departments</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Status</label>
+            <select id="filter-status">
+              <option value="">All Status</option>
+              <option value="active">Active / Online</option>
+              <option value="repair">Repair / Maintenance</option>
+              <option value="retired">Retired / Decommissioned</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Date From</label>
+            <input type="date" id="filter-from">
+          </div>
+
+          <div class="form-group">
+            <label>Date To</label>
+            <input type="date" id="filter-to">
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px; margin-top:20px; flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="runSearch()">🔍 Search</button>
+          <button class="btn btn-secondary" onclick="clearFilters()">✕ Clear</button>
+          <button class="btn btn-success" id="export-btn" onclick="exportCsv()">
+            ⬇ Export CSV
+          </button>
+          <span id="result-count" style="display:flex;align-items:center;color:var(--text-muted);font-size:13px;margin-left:8px;"></span>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div id="results-section">
+
+        <!-- Assets Table -->
+        <div id="assets-results" class="card" style="margin-bottom:16px;">
+          <div class="card-header">
+            <div class="card-title">🖥 PC / Laptop Records <span id="assets-count" style="color:var(--text-muted);font-weight:400;font-size:13px;"></span></div>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>PC Name</th>
+                  <th>Username</th>
+                  <th>Type</th>
+                  <th>Department</th>
+                  <th>Location</th>
+                  <th>CPU/Make</th>
+                  <th>RAM</th>
+                  <th>SSD</th>
+                  <th>OS</th>
+                  <th>Status</th>
+                  <th>Next Service</th>
+                  <th>Technician</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody id="assets-tbody">
+                <tr><td colspan="14" style="text-align:center;color:var(--text-muted);padding:32px;">Run a search to see results</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="assets-pagination" class="pagination"></div>
+        </div>
+
+        <!-- Servers Table -->
+        <div id="servers-results" class="card" style="display:none;">
+          <div class="card-header">
+            <div class="card-title">🖧 Server Records <span id="servers-count" style="color:var(--text-muted);font-weight:400;font-size:13px;"></span></div>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Server Name</th>
+                  <th>OS Type</th>
+                  <th>OS Version</th>
+                  <th>IP Address</th>
+                  <th>Location</th>
+                  <th>CPU</th>
+                  <th>RAM</th>
+                  <th>Roles</th>
+                  <th>Status</th>
+                  <th>Last Patch</th>
+                  <th>Technician</th>
+                </tr>
+              </thead>
+              <tbody id="servers-tbody">
+                <tr><td colspan="12" style="text-align:center;color:var(--text-muted);padding:32px;">Run a search to see results</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/notifications.js"></script>
+<script>
+let currentSection = 'assets';
+let lastResults = { assets: [], servers: [] };
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await populateSelect(document.getElementById('filter-dept'), 'department', 'All Departments');
+  document.getElementById('search-q').addEventListener('keydown', e => {
+    if (e.key === 'Enter') runSearch();
+  });
+});
+
+function switchSection(section) {
+  currentSection = section;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + section).classList.add('active');
+
+  const typeGroup = document.getElementById('filter-type-group');
+  typeGroup.style.display = (section === 'servers') ? 'none' : '';
+
+  const assetsResults = document.getElementById('assets-results');
+  const serversResults = document.getElementById('servers-results');
+
+  if (section === 'servers') {
+    assetsResults.style.display = 'none';
+    serversResults.style.display = 'block';
+  } else if (section === 'all') {
+    assetsResults.style.display = 'block';
+    serversResults.style.display = 'block';
+  } else {
+    assetsResults.style.display = 'block';
+    serversResults.style.display = 'none';
+  }
+}
+
+async function runSearch() {
+  const params = {
+    q: document.getElementById('search-q').value,
+    asset_type: document.getElementById('filter-type').value,
+    department: document.getElementById('filter-dept').value,
+    status: document.getElementById('filter-status').value,
+    created_from: document.getElementById('filter-from').value,
+    created_to: document.getElementById('filter-to').value,
+    section: currentSection
+  };
+
+  // Remove empty params
+  Object.keys(params).forEach(k => { if (!params[k]) delete params[k]; });
+
+  try {
+    const res = await api.reports.search(params);
+    if (!res.success) { showError(res.error); return; }
+
+    lastResults = res.data;
+
+    const totalCount = res.counts.assets + res.counts.servers;
+    document.getElementById('result-count').textContent = `${totalCount} record${totalCount !== 1 ? 's' : ''} found`;
+
+    renderAssetsTable(res.data.assets);
+    renderServersTable(res.data.servers);
+
+    document.getElementById('assets-count').textContent = `(${res.counts.assets})`;
+    document.getElementById('servers-count').textContent = `(${res.counts.servers})`;
+
+    switchSection(currentSection); // re-apply visibility
+
+  } catch (err) {
+    showError('Search failed: ' + err.message);
+  }
+}
+
+function renderAssetsTable(assets) {
+  const tbody = document.getElementById('assets-tbody');
+  if (!assets.length) {
+    tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:var(--text-muted);padding:32px;">No assets found for these filters</td></tr>';
+    return;
+  }
+  tbody.innerHTML = assets.map(a => {
+    const nextSvc = a.next_service_date;
+    const daysUntil = nextSvc ? Math.ceil((new Date(nextSvc) - new Date()) / 86400000) : null;
+    const svcColor = daysUntil === null ? 'var(--text-muted)' : daysUntil < 0 ? 'var(--danger)' : daysUntil <= 7 ? 'var(--warning)' : 'var(--success)';
+
+    return `
+      <tr onclick="location.href='asset-detail.html?id=${a.id}'" style="cursor:pointer;">
+        <td class="mono" style="font-size:11px;">${a.id}</td>
+        <td><strong>${a.pc_name || '—'}</strong></td>
+        <td style="color:var(--text-secondary);">${a.pc_username || '—'}</td>
+        <td>${statusBadge(a.asset_type)}</td>
+        <td>${a.department || '—'}</td>
+        <td style="font-size:12px;color:var(--text-secondary);">${a.pc_location || '—'}</td>
+        <td style="font-size:12px;">${a.hardware_make || '—'}</td>
+        <td style="font-size:12px;">${a.ram || '—'}</td>
+        <td style="font-size:12px;">${a.ssd || '—'}</td>
+        <td style="font-size:12px;">${a.os_version || '—'}</td>
+        <td>${statusBadge(a.status)}</td>
+        <td style="color:${svcColor};font-size:12px;">${formatDate(nextSvc)}</td>
+        <td style="font-size:12px;">${a.technician_name || '—'}</td>
+        <td style="font-size:11px;color:var(--text-muted);">${formatDate(a.created_at)}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderServersTable(servers) {
+  const tbody = document.getElementById('servers-tbody');
+  if (!servers.length) {
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--text-muted);padding:32px;">No servers found for these filters</td></tr>';
+    return;
+  }
+  tbody.innerHTML = servers.map(s => `
+    <tr style="cursor:pointer;" onclick="location.href='server-list.html'">
+      <td class="mono" style="font-size:11px;">${s.id}</td>
+      <td><strong>${s.server_name}</strong></td>
+      <td>${s.os_type === 'Linux' ? '🐧 Linux' : '🪟 Windows Server'}</td>
+      <td style="font-size:12px;color:var(--text-secondary);">${s.os_version || '—'}</td>
+      <td class="mono" style="font-size:12px;">${s.ip_address || '—'}</td>
+      <td style="font-size:12px;">${s.location || '—'}</td>
+      <td style="font-size:12px;">${s.cpu || '—'}</td>
+      <td style="font-size:12px;">${s.ram || '—'}</td>
+      <td style="font-size:11px;color:var(--text-secondary);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${s.roles_services||''}">${s.roles_services || '—'}</td>
+      <td>${statusBadge(s.status)}</td>
+      <td style="font-size:12px;">${formatDate(s.last_patch_date)}</td>
+      <td style="font-size:12px;">${s.technician_name || '—'}</td>
+    </tr>
+  `).join('');
+}
+
+async function exportCsv() {
+  const params = {
+    q: document.getElementById('search-q').value,
+    asset_type: document.getElementById('filter-type').value,
+    department: document.getElementById('filter-dept').value,
+    status: document.getElementById('filter-status').value,
+    created_from: document.getElementById('filter-from').value,
+    created_to: document.getElementById('filter-to').value
+  };
+  Object.keys(params).forEach(k => { if (!params[k]) delete params[k]; });
+
+  const btn = document.getElementById('export-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Exporting…';
+
+  try {
+    const section = currentSection === 'all' ? 'assets' : currentSection;
+    await downloadCsv(params, section);
+    showSuccess('CSV exported successfully!');
+  } catch (e) {
+    showError('Export failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '⬇ Export CSV';
+  }
+}
+
+function clearFilters() {
+  document.getElementById('search-q').value = '';
+  document.getElementById('filter-type').value = '';
+  document.getElementById('filter-dept').value = '';
+  document.getElementById('filter-status').value = '';
+  document.getElementById('filter-from').value = '';
+  document.getElementById('filter-to').value = '';
+  document.getElementById('result-count').textContent = '';
+  document.getElementById('assets-tbody').innerHTML = '<tr><td colspan="14" style="text-align:center;color:var(--text-muted);padding:32px;">Run a search to see results</td></tr>';
+  document.getElementById('servers-tbody').innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--text-muted);padding:32px;">Run a search to see results</td></tr>';
+}
+</script>
+</body>
+</html>

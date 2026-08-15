@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Assets — ITAMS</title>
+  <meta name="description" content="IT Asset Management System - All Assets">
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    /* ── Page-specific tweaks ──────────────────────────────── */
+    .stats-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .stat-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .stat-chip strong {
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+
+    /* Search bar override – more compact for filter row */
+    .search-bar select {
+      min-width: 140px;
+      flex-shrink: 0;
+    }
+
+    /* Service date coloring */
+    .date-overdue { color: #ef4444; font-weight: 600; }
+    .date-soon    { color: #f59e0b; font-weight: 600; }
+    .date-ok      { color: #10b981; }
+
+    /* Sortable header indicator */
+    th[data-col] { cursor: pointer; }
+    th[data-col]:hover { color: var(--text-primary); }
+
+    /* Action buttons in table */
+    .action-btns {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    /* Loading state */
+    .loading-overlay {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 64px 24px;
+      gap: 16px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .loading-overlay .spinner {
+      width: 36px;
+      height: 36px;
+      border-width: 3px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 24px;
+      gap: 16px;
+      text-align: center;
+    }
+
+    .empty-state .empty-icon {
+      font-size: 56px;
+      opacity: 0.4;
+    }
+
+    .empty-state h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .empty-state p {
+      color: var(--text-muted);
+      font-size: 14px;
+      max-width: 360px;
+    }
+
+    /* Row clickable style */
+    tbody tr {
+      cursor: pointer;
+    }
+
+    /* Prevent action cell click from firing row nav */
+    td.actions-cell {
+      cursor: default;
+    }
+
+    /* ID column */
+    .id-cell {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    /* Pagination info */
+    .pagination-info {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    /* Search bar responsive */
+    @media (max-width: 900px) {
+      .search-bar select { min-width: 110px; }
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <div class="main-content">
+
+    <!-- ── Topbar ─────────────────────────────────────────── -->
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>All Assets</h1>
+      </div>
+      <div class="topbar-actions">
+        <div class="notif-bell" id="notif-bell-btn" onclick="toggleNotifPanel()" title="Notifications">
+          🔔
+          <span class="bell-badge" id="bell-badge" style="display:none">0</span>
+        </div>
+        <a href="new-asset.html" class="btn btn-primary">➕ Add Asset</a>
+      </div>
+    </header>
+
+    <!-- ── Page Content ───────────────────────────────────── -->
+    <main class="page-content fade-in">
+
+      <!-- Search Bar -->
+      <div class="search-bar" id="search-bar">
+        <!-- Text search -->
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            id="q"
+            placeholder="Search by name, username, department, IP, ID…"
+            autocomplete="off"
+          >
+        </div>
+
+        <!-- Type filter -->
+        <select id="filter-type">
+          <option value="">All Types</option>
+          <option value="desktop">Desktop</option>
+          <option value="laptop">Laptop</option>
+        </select>
+
+        <!-- Department filter (populated from presets) -->
+        <select id="filter-department">
+          <option value="">All Departments</option>
+        </select>
+
+        <!-- Status filter -->
+        <select id="filter-status">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="repair">Repair</option>
+          <option value="retired">Retired</option>
+          <option value="lost">Lost</option>
+        </select>
+
+        <!-- Buttons -->
+        <button class="btn btn-primary" id="btn-search" onclick="doSearch()">Search</button>
+        <button class="btn btn-secondary" id="btn-clear" onclick="clearFilters()">Clear</button>
+        <button class="btn btn-success" id="btn-export" onclick="exportCsv()">⬇ Export CSV</button>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stats-row" id="stats-row">
+        <div class="stat-chip" id="stat-total">
+          📦 Total shown: <strong id="stat-count">—</strong>
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div class="table-container" id="table-container">
+        <!-- Loading State -->
+        <div class="loading-overlay" id="loading-state">
+          <div class="spinner"></div>
+          <span>Loading assets…</span>
+        </div>
+
+        <!-- Table (hidden until data loads) -->
+        <table id="assets-table" style="display:none;">
+          <thead>
+            <tr>
+              <th data-col="id">ID</th>
+              <th data-col="pc_name">PC Name</th>
+              <th data-col="pc_username">Username</th>
+              <th data-col="asset_type">Type</th>
+              <th data-col="department">Department</th>
+              <th data-col="location">Location</th>
+              <th data-col="processor">CPU / Make</th>
+              <th data-col="ram">RAM</th>
+              <th data-col="status">Status</th>
+              <th data-col="next_service_date">Next Service</th>
+              <th data-col="technician_name">Technician</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="assets-tbody">
+          </tbody>
+        </table>
+
+        <!-- Empty State (hidden by default) -->
+        <div class="empty-state" id="empty-state" style="display:none;">
+          <div class="empty-icon">🖥</div>
+          <h3>No assets found</h3>
+          <p id="empty-msg">No assets match your search. Try adjusting your filters or add a new asset.</p>
+          <a href="new-asset.html" class="btn btn-primary" id="empty-cta">➕ Add First Asset</a>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination" id="pagination" style="display:none;"></div>
+      <p class="pagination-info" id="pagination-info"></p>
+
+    </main>
+  </div><!-- /.main-content -->
+</div><!-- /.layout -->
+
+<!-- Notification Panel -->
+<div id="notif-panel" style="
+  position:fixed; top:64px; right:0; width:360px; height:calc(100vh - 64px);
+  background:var(--bg-secondary); border-left:1px solid var(--border);
+  padding:20px; overflow-y:auto; z-index:200;
+  transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+    <h3 style="font-size:16px; font-weight:700;">Notifications</h3>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-secondary btn-sm" onclick="markAllRead()">Mark All Read</button>
+      <button class="btn btn-secondary btn-sm" onclick="toggleNotifPanel()">✕</button>
+    </div>
+  </div>
+  <div id="notif-panel-list"></div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <div class="modal-title">🗑 Delete Asset</div>
+      <button class="modal-close" onclick="closeDeleteModal()">✕</button>
+    </div>
+    <p style="color:var(--text-secondary); font-size:14px; margin-bottom:24px;">
+      Are you sure you want to delete asset <strong id="delete-asset-name" style="color:var(--text-primary)"></strong>?
+      This action cannot be undone.
+    </p>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" id="confirm-delete-btn" onclick="confirmDelete()">🗑 Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/notifications.js"></script>
+<script>
+// ============================================================
+//  ITAMS — Asset List Page Logic
+// ============================================================
+
+const PAGE_SIZE = 20;
+
+// State
+let allAssets     = [];   // full API result
+let filteredData  = [];   // after client-side filter/sort
+let currentPage   = 1;
+let sortCol       = '';
+let sortAsc       = true;
+let debounceTimer = null;
+let deleteTargetId   = null;
+let deleteTargetName = '';
+
+// ── Init ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  // Populate department preset filter (no custom "Other" entry)
+  await populateDeptFilter();
+
+  // Load assets
+  await loadAssets();
+
+  // Real-time debounced search on text input
+  document.getElementById('q').addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(applyFilters, 300);
+  });
+
+  // Filter dropdowns trigger immediate refilter
+  ['filter-type', 'filter-department', 'filter-status'].forEach(id => {
+    document.getElementById(id).addEventListener('change', applyFilters);
+  });
+
+  // Column sorting
+  document.querySelectorAll('th[data-col]').forEach(th => {
+    th.addEventListener('click', () => handleSort(th.dataset.col, th));
+  });
+});
+
+// ── Populate Department from Presets ─────────────────────────
+async function populateDeptFilter() {
+  try {
+    const presets = await getPresets();
+    const depts = presets['department'] || [];
+    const sel = document.getElementById('filter-department');
+    depts.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = d;
+      sel.appendChild(opt);
+    });
+  } catch (e) {
+    console.warn('[AssetList] Could not load department presets:', e.message);
+  }
+}
+
+// ── Fetch All Assets ──────────────────────────────────────────
+async function loadAssets() {
+  showLoading(true);
+  try {
+    const res = await api.assets.list({ q: '' });
+    if (!res.success) throw new Error(res.error || 'Failed to load assets');
+    allAssets = res.data || [];
+    applyFilters();
+  } catch (err) {
+    showLoading(false);
+    showEmpty(true, 'Could not load assets. Please try again.');
+    showError('Failed to load assets: ' + err.message);
+  }
+}
+
+// ── Apply Filters + Sort + Paginate ──────────────────────────
+function applyFilters() {
+  const q      = document.getElementById('q').value.trim().toLowerCase();
+  const type   = document.getElementById('filter-type').value;
+  const dept   = document.getElementById('filter-department').value;
+  const status = document.getElementById('filter-status').value;
+
+  filteredData = allAssets.filter(a => {
+    // Text search across key fields
+    if (q) {
+      const haystack = [
+        a.id, a.pc_name, a.pc_username, a.department,
+        a.ip_address, a.location, a.processor, a.status
+      ].filter(Boolean).join(' ').toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+    if (type   && a.asset_type  !== type)   return false;
+    if (dept   && a.department  !== dept)   return false;
+    if (status && a.status      !== status) return false;
+    return true;
+  });
+
+  // Sort
+  if (sortCol) {
+    filteredData.sort((a, b) => {
+      let va = a[sortCol] ?? '';
+      let vb = b[sortCol] ?? '';
+      // Numeric sort for IDs
+      if (sortCol === 'id') {
+        va = parseInt(va) || 0;
+        vb = parseInt(vb) || 0;
+        return sortAsc ? va - vb : vb - va;
+      }
+      va = String(va).toLowerCase();
+      vb = String(vb).toLowerCase();
+      if (va < vb) return sortAsc ? -1 : 1;
+      if (va > vb) return sortAsc ?  1 : -1;
+      return 0;
+    });
+  }
+
+  currentPage = 1;
+  render();
+}
+
+// ── Render Table ──────────────────────────────────────────────
+function render() {
+  showLoading(false);
+
+  const total = filteredData.length;
+
+  // Update stats
+  document.getElementById('stat-count').textContent = total;
+
+  if (total === 0) {
+    document.getElementById('assets-table').style.display = 'none';
+    document.getElementById('pagination').style.display = 'none';
+    document.getElementById('pagination-info').textContent = '';
+    const q = document.getElementById('q').value.trim();
+    const isFiltered = q ||
+      document.getElementById('filter-type').value ||
+      document.getElementById('filter-department').value ||
+      document.getElementById('filter-status').value;
+    showEmpty(true, isFiltered
+      ? 'No assets match your search criteria. Try adjusting your filters.'
+      : 'No assets have been added yet. Click below to add your first asset.');
+    document.getElementById('empty-cta').style.display = isFiltered ? 'none' : 'inline-flex';
+    return;
+  }
+
+  showEmpty(false);
+
+  // Paginate
+  const totalPages  = Math.ceil(total / PAGE_SIZE);
+  const startIdx    = (currentPage - 1) * PAGE_SIZE;
+  const pageData    = filteredData.slice(startIdx, startIdx + PAGE_SIZE);
+  const endIdx      = Math.min(startIdx + PAGE_SIZE, total);
+
+  // Render rows
+  const tbody = document.getElementById('assets-tbody');
+  tbody.innerHTML = pageData.map(a => buildRow(a)).join('');
+
+  document.getElementById('assets-table').style.display = '';
+
+  // Pagination controls
+  renderPagination(totalPages);
+  document.getElementById('pagination-info').textContent =
+    `Showing ${startIdx + 1}–${endIdx} of ${total} record${total !== 1 ? 's' : ''}`;
+}
+
+// ── Build Table Row ───────────────────────────────────────────
+function buildRow(a) {
+  const nextServiceHtml = formatServiceDate(a.next_service_date);
+
+  return `
+    <tr onclick="rowClick(event, ${a.id})">
+      <td class="id-cell">${escHtml(String(a.id))}</td>
+      <td><strong>${escHtml(a.pc_name || '—')}</strong></td>
+      <td style="color:var(--text-secondary);">${escHtml(a.pc_username || '—')}</td>
+      <td>${statusBadge(a.asset_type)}</td>
+      <td style="color:var(--text-secondary);">${escHtml(a.department || '—')}</td>
+      <td style="color:var(--text-secondary); font-size:12px;">${escHtml(a.location || '—')}</td>
+      <td style="font-size:12px; color:var(--text-secondary);">${escHtml(a.processor || a.make || '—')}</td>
+      <td style="font-size:12px;">${escHtml(a.ram || '—')}</td>
+      <td>${statusBadge(a.status)}</td>
+      <td>${nextServiceHtml}</td>
+      <td style="font-size:12px; color:var(--text-secondary);">${escHtml(a.technician_name || '—')}</td>
+      <td class="actions-cell" onclick="event.stopPropagation()">
+        <div class="action-btns">
+          <a href="asset-detail.html?id=${a.id}" class="btn btn-secondary btn-sm" title="View Details">👁 View</a>
+          <button
+            class="btn btn-danger btn-sm"
+            title="Delete Asset"
+            onclick="openDeleteModal(${a.id}, '${escAttr(a.pc_name || a.pc_username || String(a.id))}')"
+          >🗑</button>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+// ── Row click: navigate to detail ────────────────────────────
+function rowClick(event, id) {
+  // Ignore if clicking on a button/link inside the row
+  if (event.target.closest('button, a')) return;
+  window.location.href = `asset-detail.html?id=${id}`;
+}
+
+// ── Format service date with color coding ────────────────────
+function formatServiceDate(dateStr) {
+  if (!dateStr) return '<span style="color:var(--text-muted);">—</span>';
+  const d = new Date(dateStr);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const diffMs   = d - now;
+  const diffDays = Math.ceil(diffMs / 86400000);
+  const formatted = formatDate(dateStr);
+
+  if (diffDays < 0) {
+    return `<span class="date-overdue" title="${diffDays * -1} days overdue">⚠ ${formatted}</span>`;
+  } else if (diffDays <= 7) {
+    return `<span class="date-soon" title="Due in ${diffDays} day${diffDays !== 1 ? 's' : ''}">⏰ ${formatted}</span>`;
+  } else {
+    return `<span class="date-ok">${formatted}</span>`;
+  }
+}
+
+// ── Sorting ───────────────────────────────────────────────────
+function handleSort(col, thEl) {
+  if (sortCol === col) {
+    sortAsc = !sortAsc;
+  } else {
+    sortCol = col;
+    sortAsc = true;
+  }
+
+  // Update header classes
+  document.querySelectorAll('th[data-col]').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+  });
+  thEl.classList.add(sortAsc ? 'sort-asc' : 'sort-desc');
+
+  applyFilters();
+}
+
+// ── Pagination ────────────────────────────────────────────────
+function renderPagination(totalPages) {
+  const pg  = document.getElementById('pagination');
+  const info = document.getElementById('pagination-info');
+
+  if (totalPages <= 1) {
+    pg.style.display = 'none';
+    return;
+  }
+
+  pg.style.display = 'flex';
+  let html = '';
+
+  // Previous
+  html += `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="goPage(${currentPage - 1})">‹</button>`;
+
+  // Page numbers (max 7 visible with ellipsis)
+  const pages = getPageNumbers(currentPage, totalPages);
+  pages.forEach(p => {
+    if (p === '…') {
+      html += `<span class="page-btn" style="border:none; cursor:default; color:var(--text-muted)">…</span>`;
+    } else {
+      html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`;
+    }
+  });
+
+  // Next
+  html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="goPage(${currentPage + 1})">›</button>`;
+
+  pg.innerHTML = html;
+}
+
+function getPageNumbers(current, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages = [];
+  if (current <= 4) {
+    for (let i = 1; i <= 5; i++) pages.push(i);
+    pages.push('…', total);
+  } else if (current >= total - 3) {
+    pages.push(1, '…');
+    for (let i = total - 4; i <= total; i++) pages.push(i);
+  } else {
+    pages.push(1, '…', current - 1, current, current + 1, '…', total);
+  }
+  return pages;
+}
+
+function goPage(p) {
+  currentPage = p;
+  render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Search & Clear ────────────────────────────────────────────
+function doSearch() {
+  applyFilters();
+}
+
+function clearFilters() {
+  document.getElementById('q').value                  = '';
+  document.getElementById('filter-type').value        = '';
+  document.getElementById('filter-department').value  = '';
+  document.getElementById('filter-status').value      = '';
+  sortCol = '';
+  sortAsc = true;
+  document.querySelectorAll('th[data-col]').forEach(th =>
+    th.classList.remove('sort-asc', 'sort-desc')
+  );
+  applyFilters();
+}
+
+// ── CSV Export ────────────────────────────────────────────────
+async function exportCsv() {
+  const btn = document.getElementById('btn-export');
+  btn.disabled = true;
+  btn.textContent = '⬇ Exporting…';
+  try {
+    const params = buildQueryParams();
+    await downloadCsv(params, 'assets');
+    showSuccess('CSV exported successfully!');
+  } catch (err) {
+    showError('Export failed: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '⬇ Export CSV';
+  }
+}
+
+function buildQueryParams() {
+  return {
+    q:          document.getElementById('q').value.trim(),
+    asset_type: document.getElementById('filter-type').value,
+    department: document.getElementById('filter-department').value,
+    status:     document.getElementById('filter-status').value,
+  };
+}
+
+// ── Delete ────────────────────────────────────────────────────
+function openDeleteModal(id, name) {
+  deleteTargetId   = id;
+  deleteTargetName = name;
+  document.getElementById('delete-asset-name').textContent = name;
+  document.getElementById('delete-modal').classList.add('show');
+}
+
+function closeDeleteModal() {
+  deleteTargetId   = null;
+  deleteTargetName = '';
+  document.getElementById('delete-modal').classList.remove('show');
+}
+
+async function confirmDelete() {
+  if (!deleteTargetId) return;
+
+  const btn = document.getElementById('confirm-delete-btn');
+  btn.disabled = true;
+  btn.textContent = 'Deleting…';
+
+  try {
+    const res = await api.assets.delete(deleteTargetId);
+    if (!res.success) throw new Error(res.error || 'Delete failed');
+
+    // Remove from local data
+    allAssets    = allAssets.filter(a => a.id !== deleteTargetId);
+    closeDeleteModal();
+    applyFilters();
+    showSuccess(`Asset "${deleteTargetName}" deleted successfully.`);
+  } catch (err) {
+    showError('Delete failed: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🗑 Delete';
+  }
+}
+
+// Close modal on overlay click
+document.getElementById('delete-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeDeleteModal();
+});
+
+// ── UI State Helpers ──────────────────────────────────────────
+function showLoading(visible) {
+  document.getElementById('loading-state').style.display   = visible ? 'flex' : 'none';
+  document.getElementById('assets-table').style.display    = visible ? 'none' : '';
+  document.getElementById('empty-state').style.display     = 'none';
+  if (visible) {
+    document.getElementById('pagination').style.display    = 'none';
+    document.getElementById('pagination-info').textContent = '';
+    document.getElementById('stat-count').textContent      = '—';
+  }
+}
+
+function showEmpty(visible, msg) {
+  document.getElementById('empty-state').style.display = visible ? 'flex' : 'none';
+  if (visible) {
+    document.getElementById('empty-msg').textContent  = msg || '';
+    document.getElementById('assets-table').style.display = 'none';
+    document.getElementById('pagination').style.display   = 'none';
+    document.getElementById('pagination-info').textContent = '';
+  }
+}
+
+// ── Escape helpers ────────────────────────────────────────────
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = String(str);
+  return d.innerHTML;
+}
+
+function escAttr(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// ── Notification Panel ────────────────────────────────────────
+let notifPanelOpen = false;
+
+async function toggleNotifPanel() {
+  const panel = document.getElementById('notif-panel');
+  notifPanelOpen = !notifPanelOpen;
+  panel.style.transform = notifPanelOpen ? 'translateX(0)' : 'translateX(100%)';
+  if (notifPanelOpen) await loadNotifPanel();
+}
+
+async function loadNotifPanel() {
+  const list = document.getElementById('notif-panel-list');
+  list.innerHTML = '<div class="spinner" style="margin:20px auto;display:block;"></div>';
+  try {
+    const res = await api.notifications.getUnread();
+    if (!res.data || !res.data.length) {
+      list.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px;">✅ All caught up!</p>';
+      return;
+    }
+    const icons = { overdue:'⚠️', due_soon:'🔔', warning:'⚡', info:'ℹ️' };
+    list.innerHTML = res.data.map(n => `
+      <div style="padding:12px; margin-bottom:8px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-md); border-left:3px solid ${n.type==='overdue'?'var(--danger)':'var(--warning)'};">
+        <div style="font-size:13px; font-weight:600; margin-bottom:4px;">${icons[n.type]||'ℹ'} ${escHtml(n.title)}</div>
+        <div style="font-size:12px; color:var(--text-muted);">${escHtml(n.message || '')}</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-top:6px;">${formatDateTime(n.created_at)}</div>
+      </div>
+    `).join('');
+  } catch (e) {
+    list.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px;">Could not load notifications.</p>';
+  }
+}
+
+async function markAllRead() {
+  await api.notifications.readAll();
+  document.getElementById('bell-badge').style.display = 'none';
+  document.getElementById('notif-panel-list').innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px;">✅ All caught up!</p>';
+  showSuccess('All notifications marked as read');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Server — ITAMS</title>
+  <meta name="description" content="IT Asset Management System - Add New Server">
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    /* ── OS Type Radio Cards ─────────────────────────── */
+    .os-card-group {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .os-card {
+      flex: 1;
+      min-width: 160px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 20px 16px;
+      background: var(--bg-input);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      transition: var(--transition);
+      user-select: none;
+      text-align: center;
+    }
+
+    .os-card:hover {
+      border-color: var(--accent);
+      background: rgba(61, 111, 245, 0.05);
+    }
+
+    .os-card.selected {
+      border-color: var(--accent);
+      background: rgba(61, 111, 245, 0.12);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .os-card input[type="radio"] { display: none; }
+
+    .os-card .os-icon {
+      font-size: 36px;
+      line-height: 1;
+    }
+
+    .os-card .os-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      transition: var(--transition);
+    }
+
+    .os-card.selected .os-label {
+      color: var(--accent-light);
+    }
+
+    /* ── Checkbox Role Grid ───────────────────────────── */
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+    }
+
+    .checkbox-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 13px;
+      color: var(--text-secondary);
+      user-select: none;
+    }
+
+    .checkbox-option:hover {
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
+
+    .checkbox-option.checked {
+      background: rgba(61, 111, 245, 0.12);
+      border-color: var(--accent);
+      color: var(--accent-light);
+    }
+
+    .checkbox-option .check-box {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: var(--transition);
+      font-size: 11px;
+    }
+
+    .checkbox-option.checked .check-box {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    /* ── Status Radio Row ─────────────────────────────── */
+    .status-radio-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .status-radio {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 18px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      user-select: none;
+    }
+
+    .status-radio:hover { border-color: var(--accent); color: var(--text-primary); }
+    .status-radio input[type="radio"] { display: none; }
+
+    .status-radio.selected-online   { background: rgba(16,185,129,0.12); border-color: var(--success); color: var(--success); }
+    .status-radio.selected-offline  { background: rgba(100,116,139,0.12); border-color: #64748b; color: #64748b; }
+    .status-radio.selected-maintenance { background: rgba(245,158,11,0.12); border-color: var(--warning); color: var(--warning); }
+    .status-radio.selected-decommissioned { background: rgba(239,68,68,0.1); border-color: var(--danger); color: var(--danger); }
+
+    /* ── Form Actions Bar ─────────────────────────────── */
+    .form-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 24px 28px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      margin-bottom: 40px;
+    }
+
+    /* ── Readonly date-time display ───────────────────── */
+    .datetime-display {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      padding: 10px 14px;
+      width: 100%;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <div class="main-content">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>🖧 Add Server</h1>
+        <p>Register a new server in the ITAMS inventory</p>
+      </div>
+      <div class="topbar-actions">
+        <a href="server-list.html" class="btn btn-secondary">← Back to Servers</a>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="page-content fade-in">
+      <form id="server-form" novalidate>
+
+        <!-- ══════════════════════════════════════════════════
+             SECTION 1 — Technician & Basic Info
+        ══════════════════════════════════════════════════ -->
+        <div class="form-section">
+          <div class="form-section-title">👤 Section 1 — Technician &amp; Basic Info</div>
+          <div class="form-grid">
+
+            <!-- Technician -->
+            <div class="form-group">
+              <label for="technician_id">Technician <span class="required">*</span></label>
+              <select id="technician_id" name="technician_id" required>
+                <option value="">-- Select Technician --</option>
+              </select>
+            </div>
+
+            <!-- Date / Time (read-only) -->
+            <div class="form-group">
+              <label>Date &amp; Time</label>
+              <div class="datetime-display" id="datetime-display">Loading…</div>
+            </div>
+
+            <!-- Server Name -->
+            <div class="form-group">
+              <label for="server_name">Server Name <span class="required">*</span></label>
+              <input type="text" id="server_name" name="server_name" placeholder="e.g. PROD-WEB-01" required>
+            </div>
+
+            <!-- OS Type (Radio Cards) — full width -->
+            <div class="form-group full-width">
+              <label>OS Type <span class="required">*</span></label>
+              <div class="os-card-group" id="os-type-group">
+                <label class="os-card" id="card-linux">
+                  <input type="radio" name="os_type" value="Linux" required>
+                  <span class="os-icon">🐧</span>
+                  <span class="os-label">Linux</span>
+                </label>
+                <label class="os-card" id="card-windows">
+                  <input type="radio" name="os_type" value="Windows Server">
+                  <span class="os-icon">🪟</span>
+                  <span class="os-label">Windows Server</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- OS Version (dynamic) -->
+            <div class="form-group">
+              <label for="os_version">OS Version</label>
+              <select id="os_version" name="os_version">
+                <option value="">-- Select OS Type first --</option>
+              </select>
+            </div>
+
+            <!-- Location -->
+            <div class="form-group">
+              <label for="location">Location</label>
+              <select id="location" name="location">
+                <option value="">-- Select Location --</option>
+              </select>
+            </div>
+
+            <!-- Department -->
+            <div class="form-group">
+              <label for="department">Department</label>
+              <select id="department" name="department">
+                <option value="">-- Select Department --</option>
+              </select>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════
+             SECTION 2 — Hardware
+        ══════════════════════════════════════════════════ -->
+        <div class="form-section">
+          <div class="form-section-title">⚙️ Section 2 — Hardware</div>
+          <div class="form-grid">
+
+            <!-- Make / Vendor -->
+            <div class="form-group">
+              <label for="make">Make / Vendor</label>
+              <input type="text" id="make" name="make" placeholder="e.g. Dell, HP, Supermicro">
+            </div>
+
+            <!-- Model -->
+            <div class="form-group">
+              <label for="model">Model</label>
+              <input type="text" id="model" name="model" placeholder="e.g. PowerEdge R750">
+            </div>
+
+            <!-- Service Tag -->
+            <div class="form-group">
+              <label for="service_tag">Service Tag No <span class="required">*</span></label>
+              <input type="text" id="service_tag" name="service_tag" placeholder="e.g. 7XD3K42" required style="font-family:'JetBrains Mono',monospace; letter-spacing:0.5px;">
+            </div>
+
+            <!-- CPU -->
+            <div class="form-group">
+              <label for="cpu">CPU</label>
+              <select id="cpu" name="cpu">
+                <option value="">-- Select CPU --</option>
+              </select>
+            </div>
+
+            <!-- RAM -->
+            <div class="form-group">
+              <label for="ram">RAM</label>
+              <select id="ram" name="ram">
+                <option value="">-- Select RAM --</option>
+              </select>
+            </div>
+
+            <!-- Storage -->
+            <div class="form-group">
+              <label for="storage">Storage</label>
+              <input type="text" id="storage" name="storage" placeholder="e.g. 2× 1TB SSD RAID 1">
+            </div>
+
+            <!-- RAID Config -->
+            <div class="form-group">
+              <label for="raid_config">RAID Config</label>
+              <input type="text" id="raid_config" name="raid_config" placeholder="e.g. RAID 5, RAID 10, None">
+            </div>
+
+            <!-- Purchase Date -->
+            <div class="form-group">
+              <label for="purchase_date">Purchase Date</label>
+              <input type="date" id="purchase_date" name="purchase_date">
+            </div>
+
+            <!-- Warranty Expiry -->
+            <div class="form-group">
+              <label for="warranty_expiry">Warranty Expiry</label>
+              <input type="date" id="warranty_expiry" name="warranty_expiry">
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════
+             SECTION 3 — Network & Access
+        ══════════════════════════════════════════════════ -->
+        <div class="form-section">
+          <div class="form-section-title">🌐 Section 3 — Network &amp; Access</div>
+          <div class="form-grid">
+
+            <!-- IP Address -->
+            <div class="form-group">
+              <label for="ip_address">IP Address</label>
+              <input type="text" id="ip_address" name="ip_address" placeholder="192.168.x.x" style="font-family:'JetBrains Mono',monospace;">
+            </div>
+
+            <!-- MAC Address -->
+            <div class="form-group">
+              <label for="mac_address">MAC Address</label>
+              <input type="text" id="mac_address" name="mac_address" placeholder="AA:BB:CC:DD:EE:FF" style="font-family:'JetBrains Mono',monospace; text-transform:uppercase;">
+            </div>
+
+            <!-- Remote Access Info -->
+            <div class="form-group">
+              <label for="remote_access">Remote Access Info</label>
+              <input type="text" id="remote_access" name="remote_access" placeholder="TeamViewer ID, AnyDesk ID, SSH, RDP…">
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════
+             SECTION 4 — Server Roles & Services
+        ══════════════════════════════════════════════════ -->
+        <div class="form-section">
+          <div class="form-section-title">🗄️ Section 4 — Server Roles &amp; Services</div>
+
+          <!-- Roles checkboxes -->
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label style="margin-bottom:10px; display:block;">Roles / Services</label>
+            <div class="checkbox-grid" id="roles-grid">
+              <!-- populated by JS from presets server_role -->
+            </div>
+            <!-- Hidden field accumulates comma-separated values -->
+            <input type="hidden" id="server_roles" name="server_roles">
+          </div>
+
+          <div class="form-grid">
+            <!-- Last Patch Date -->
+            <div class="form-group">
+              <label for="last_patch_date">Last Patch Date</label>
+              <input type="date" id="last_patch_date" name="last_patch_date">
+            </div>
+
+            <!-- Last OS Upgrade -->
+            <div class="form-group">
+              <label for="last_os_upgrade">Last OS Upgrade</label>
+              <input type="date" id="last_os_upgrade" name="last_os_upgrade">
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════
+             SECTION 5 — Schedule
+        ══════════════════════════════════════════════════ -->
+        <div class="form-section">
+          <div class="form-section-title">📅 Section 5 — Schedule</div>
+          <div class="form-grid">
+
+            <!-- Status — full width -->
+            <div class="form-group full-width">
+              <label>Status <span class="required">*</span></label>
+              <div class="status-radio-group" id="status-group">
+                <label class="status-radio" data-value="Online">
+                  <input type="radio" name="status" value="Online">
+                  🟢 Online
+                </label>
+                <label class="status-radio" data-value="Offline">
+                  <input type="radio" name="status" value="Offline">
+                  ⚫ Offline
+                </label>
+                <label class="status-radio" data-value="Maintenance">
+                  <input type="radio" name="status" value="Maintenance">
+                  🟡 Maintenance
+                </label>
+                <label class="status-radio" data-value="Decommissioned">
+                  <input type="radio" name="status" value="Decommissioned">
+                  🔴 Decommissioned
+                </label>
+              </div>
+            </div>
+
+            <!-- Next Service Date -->
+            <div class="form-group">
+              <label for="next_service_date">Next Service Date</label>
+              <input type="date" id="next_service_date" name="next_service_date">
+            </div>
+
+            <!-- Service Interval -->
+            <div class="form-group">
+              <label for="service_interval_months">Service Interval</label>
+              <select id="service_interval_months" name="service_interval_months">
+                <option value="">-- Select Interval --</option>
+                <option value="1">Every 1 Month</option>
+                <option value="2">Every 2 Months</option>
+                <option value="3">Every 3 Months</option>
+                <option value="6">Every 6 Months</option>
+                <option value="12">Every 12 Months (Annual)</option>
+              </select>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════
+             SECTION 6 — Notes
+        ══════════════════════════════════════════════════ -->
+        <div class="form-section">
+          <div class="form-section-title">📝 Section 6 — Notes</div>
+          <div class="form-group full-width">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" rows="5" placeholder="Any additional notes about this server — configuration details, known issues, access credentials location, etc."></textarea>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════
+             Form Actions
+        ══════════════════════════════════════════════════ -->
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" id="save-btn">
+            <span id="save-icon">🖧</span>
+            <span id="save-label">Save Server</span>
+          </button>
+          <a href="server-list.html" class="btn btn-secondary">✕ Cancel</a>
+          <div id="form-error" style="display:none; color:var(--danger); font-size:13px; margin-left:auto; font-weight:500;"></div>
+        </div>
+
+      </form>
+    </main>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/notifications.js"></script>
+<script>
+// ── OS Version presets (filtered by OS type) ────────────────────
+const OS_VERSIONS = {
+  Linux: [
+    'Ubuntu 22.04 LTS',
+    'Ubuntu 20.04 LTS',
+    'Ubuntu 18.04 LTS',
+    'Debian 12 (Bookworm)',
+    'Debian 11 (Bullseye)',
+    'CentOS 7',
+    'CentOS Stream 9',
+    'Rocky Linux 9',
+    'AlmaLinux 9',
+    'Red Hat Enterprise Linux 9',
+    'Red Hat Enterprise Linux 8',
+    'SUSE Linux Enterprise Server 15',
+    'openSUSE Leap 15.5',
+    'Fedora Server 39',
+    'Oracle Linux 9',
+    'Other Linux'
+  ],
+  'Windows Server': [
+    'Windows Server 2022 Standard',
+    'Windows Server 2022 Datacenter',
+    'Windows Server 2019 Standard',
+    'Windows Server 2019 Datacenter',
+    'Windows Server 2016 Standard',
+    'Windows Server 2016 Datacenter',
+    'Windows Server 2012 R2',
+    'Windows Server 2012',
+    'Windows Server 2008 R2',
+    'Other Windows Server'
+  ]
+};
+
+// Default role list (used as fallback if preset not available)
+const DEFAULT_ROLES = [
+  { value: 'Web Server',            icon: '🌐' },
+  { value: 'Database Server',       icon: '🗄️' },
+  { value: 'File Server',           icon: '📁' },
+  { value: 'DNS Server',            icon: '🔍' },
+  { value: 'DHCP Server',           icon: '📡' },
+  { value: 'Mail Server',           icon: '📧' },
+  { value: 'Backup Server',         icon: '💾' },
+  { value: 'Application Server',    icon: '⚙️' },
+  { value: 'Virtualization Host',   icon: '🖥' },
+  { value: 'Domain Controller',     icon: '🔒' }
+];
+
+// ── Tracked state ────────────────────────────────────────────────
+let selectedRoles = new Set();
+
+// ── DOMContentLoaded ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  // Live date-time display
+  updateDateTime();
+  setInterval(updateDateTime, 1000);
+
+  // OS card click handlers
+  document.querySelectorAll('.os-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.os-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      card.querySelector('input[type="radio"]').checked = true;
+      filterOsVersions(card.querySelector('input').value);
+    });
+  });
+
+  // Status radio click handlers
+  document.querySelectorAll('.status-radio').forEach(label => {
+    label.addEventListener('click', () => {
+      document.querySelectorAll('.status-radio').forEach(l => {
+        l.className = 'status-radio';
+      });
+      const val = label.dataset.value.toLowerCase();
+      label.classList.add(`selected-${val}`);
+      label.querySelector('input').checked = true;
+    });
+  });
+
+  // Load presets from API
+  try {
+    await loadPresets();
+  } catch (err) {
+    console.warn('[new-server] Preset load error:', err.message);
+    buildRolesGrid(DEFAULT_ROLES.map(r => r.value));
+  }
+
+  // Load technician dropdown
+  try {
+    await populateTechnicianSelect(document.getElementById('technician_id'));
+  } catch (err) {
+    console.warn('[new-server] Technician load error:', err.message);
+  }
+
+  // Form submit
+  document.getElementById('server-form').addEventListener('submit', handleSubmit);
+});
+
+// ── Live DateTime ─────────────────────────────────────────────────
+function updateDateTime() {
+  const now = new Date();
+  const options = {
+    weekday: 'short', day: '2-digit', month: 'short',
+    year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
+  };
+  document.getElementById('datetime-display').textContent =
+    now.toLocaleString('en-GB', options);
+}
+
+// ── Load presets from API ─────────────────────────────────────────
+async function loadPresets() {
+  const presets = await getPresets();
+
+  // Location
+  await populateSelect(document.getElementById('location'), 'location', '-- Select Location --');
+
+  // Department
+  await populateSelect(document.getElementById('department'), 'department', '-- Select Department --');
+
+  // CPU
+  await populateSelect(document.getElementById('cpu'), 'cpu', '-- Select CPU --');
+
+  // RAM
+  await populateSelect(document.getElementById('ram'), 'ram', '-- Select RAM --');
+
+  // Server roles
+  const roles = presets['server_role'] || DEFAULT_ROLES.map(r => r.value);
+  buildRolesGrid(roles);
+}
+
+// ── Filter OS Version Options ─────────────────────────────────────
+function filterOsVersions(osType) {
+  const select = document.getElementById('os_version');
+  const versions = OS_VERSIONS[osType] || [];
+  select.innerHTML = `<option value="">-- Select Version --</option>`;
+  versions.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v;
+    opt.textContent = v;
+    select.appendChild(opt);
+  });
+  // Custom entry option
+  const other = document.createElement('option');
+  other.value = '__other__';
+  other.textContent = '✎ Enter custom version…';
+  select.appendChild(other);
+
+  select.onchange = () => {
+    if (select.value === '__other__') {
+      const custom = prompt('Enter custom OS version:');
+      if (custom) {
+        const opt = document.createElement('option');
+        opt.value = custom;
+        opt.textContent = custom;
+        select.insertBefore(opt, other);
+        select.value = custom;
+      } else {
+        select.value = '';
+      }
+    }
+  };
+}
+
+// ── Build Roles Checkbox Grid ─────────────────────────────────────
+function buildRolesGrid(roles) {
+  const grid = document.getElementById('roles-grid');
+  const roleIcons = {
+    'Web Server': '🌐',
+    'Database Server': '🗄️',
+    'File Server': '📁',
+    'DNS Server': '🔍',
+    'DHCP Server': '📡',
+    'Mail Server': '📧',
+    'Backup Server': '💾',
+    'Application Server': '⚙️',
+    'Virtualization Host': '🖥',
+    'Domain Controller': '🔒'
+  };
+
+  grid.innerHTML = '';
+  roles.forEach(role => {
+    const icon = roleIcons[role] || '🔧';
+    const div = document.createElement('div');
+    div.className = 'checkbox-option';
+    div.dataset.value = role;
+    div.innerHTML = `
+      <span class="check-box"></span>
+      <span>${icon} ${role}</span>
+    `;
+    div.addEventListener('click', () => toggleRole(div, role));
+    grid.appendChild(div);
+  });
+}
+
+// ── Toggle Role Selection ─────────────────────────────────────────
+function toggleRole(el, role) {
+  if (selectedRoles.has(role)) {
+    selectedRoles.delete(role);
+    el.classList.remove('checked');
+    el.querySelector('.check-box').textContent = '';
+  } else {
+    selectedRoles.add(role);
+    el.classList.add('checked');
+    el.querySelector('.check-box').textContent = '✓';
+  }
+  document.getElementById('server_roles').value = [...selectedRoles].join(',');
+}
+
+// ── Form Validation ───────────────────────────────────────────────
+function validateForm(data) {
+  const errors = [];
+  if (!data.technician_id)  errors.push('Technician is required.');
+  if (!data.server_name)    errors.push('Server Name is required.');
+  if (!data.os_type)        errors.push('OS Type is required.');
+  if (!data.service_tag)    errors.push('Service Tag No is required.');
+  if (!data.status)         errors.push('Status is required.');
+  return errors;
+}
+
+// ── Show Form Error ───────────────────────────────────────────────
+function showFormError(msg) {
+  const el = document.getElementById('form-error');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+}
+
+function clearFormError() {
+  document.getElementById('form-error').style.display = 'none';
+}
+
+// ── Handle Submit ─────────────────────────────────────────────────
+async function handleSubmit(e) {
+  e.preventDefault();
+  clearFormError();
+
+  const form = document.getElementById('server-form');
+  const saveBtn = document.getElementById('save-btn');
+  const saveLabel = document.getElementById('save-label');
+  const saveIcon  = document.getElementById('save-icon');
+
+  // Gather form data
+  const formData = new FormData(form);
+  const data = {};
+  formData.forEach((val, key) => {
+    if (val !== '') data[key] = val;
+  });
+
+  // Validate
+  const errors = validateForm(data);
+  if (errors.length) {
+    showFormError(errors[0]);
+    return;
+  }
+
+  // Convert numeric fields
+  if (data.service_interval_months) {
+    data.service_interval_months = parseInt(data.service_interval_months, 10);
+  }
+
+  // Disable button, show spinner
+  saveBtn.disabled = true;
+  saveIcon.textContent = '';
+  saveLabel.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;vertical-align:middle;"></span> Saving…';
+
+  try {
+    const res = await api.servers.create(data);
+    if (res && (res.success || res.id || res.data)) {
+      showSuccess('Server added successfully!');
+      setTimeout(() => {
+        window.location.href = 'server-list.html';
+      }, 900);
+    } else {
+      throw new Error(res?.error || 'Unexpected response from server.');
+    }
+  } catch (err) {
+    showError('Failed to save server: ' + err.message);
+    showFormError(err.message);
+    saveBtn.disabled = false;
+    saveIcon.textContent = '🖧';
+    saveLabel.textContent = 'Save Server';
+  }
+}
+</script>
+</body>
+</html>

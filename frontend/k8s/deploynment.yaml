@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: itams-frontend
+  labels:
+    app: itams-app-frontend
+spec:
+  replicas: 2
+  # 1. Rollout Strategy Configuration
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # Allows 1 extra pod above replica count during rollout
+      maxUnavailable: 0  # Guarantees 100% available pods during rollout
+  selector:
+    matchLabels:
+      app: itams-app-frontend
+  template:
+    metadata:
+      labels:
+        app: itams-app-frontend
+    spec:
+      containers:
+      - name: itams-app-frontend
+        image: nginx:1.25.3  # Production best practice: use specific tag, not 'latest'
+        ports:
+        - containerPort: 80

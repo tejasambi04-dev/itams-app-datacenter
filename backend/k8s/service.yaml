@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: itams-app-backend-service
+spec:
+  selector:
+    app: itams-app-backend
+  ports:
+  - port: 3000
+    targetPort: 3000

@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asset Detail — ITAMS</title>
+  <meta name="description" content="View and edit full asset record details">
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    .detail-hero {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .detail-hero::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--grad-accent);
+    }
+    .detail-asset-icon {
+      width: 72px; height: 72px;
+      background: var(--grad-accent);
+      border-radius: var(--radius-lg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-accent);
+    }
+    .detail-asset-info { flex: 1; }
+    .detail-asset-name {
+      font-size: 24px; font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+    .detail-asset-meta {
+      display: flex; flex-wrap: wrap; gap: 12px;
+      margin-top: 10px;
+    }
+    .meta-chip {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 4px 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .meta-chip strong { color: var(--text-primary); }
+
+    /* ── Detail Grid ──────────────────────────────── */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .detail-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+    }
+    .detail-section-title {
+      font-size: 13px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      color: var(--text-secondary);
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .field-list { display: flex; flex-direction: column; gap: 10px; }
+    .field-row {
+      display: flex; align-items: flex-start;
+      gap: 12px; padding: 8px 0;
+      border-bottom: 1px solid rgba(30,45,80,0.4);
+    }
+    .field-row:last-child { border-bottom: none; }
+    .field-label {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--text-muted);
+      min-width: 130px; flex-shrink: 0;
+      padding-top: 2px;
+    }
+    .field-value {
+      font-size: 14px;
+      color: var(--text-primary);
+      word-break: break-word;
+    }
+    .field-value.empty { color: var(--text-muted); font-style: italic; }
+    .field-value.mono  { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+    /* ── Edit Mode ────────────────────────────────── */
+    .edit-input {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      padding: 6px 10px;
+      font-size: 13px;
+      font-family: inherit;
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+    .edit-input:focus { outline: none; border-color: var(--accent); }
+    select.edit-input { cursor: pointer; }
+
+    /* ── Audit Files ───────────────────────────────── */
+    .audit-file-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: 8px;
+    }
+    .audit-file-icon { font-size: 26px; flex-shrink: 0; }
+    .audit-file-info { flex: 1; min-width: 0; }
+    .audit-file-name {
+      font-size: 13px; font-weight: 600;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .audit-file-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── Schedule Items ────────────────────────────── */
+    .schedule-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: 8px;
+    }
+    .schedule-date-box {
+      min-width: 52px; height: 52px;
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .schedule-date-day   { font-size: 20px; font-weight: 800; line-height: 1; }
+    .schedule-date-month { font-size: 9px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+    .schedule-info { flex: 1; }
+    .schedule-type { font-size: 13px; font-weight: 600; }
+    .schedule-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── Audit log table ──────────────────────────── */
+    .audit-log-row td { font-size: 12px; padding: 8px 12px; }
+
+    /* ── Action bar ───────────────────────────────── */
+    .detail-actions {
+      display: flex; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    /* ── Full-width section ───────────────────────── */
+    .full-width { grid-column: 1 / -1; }
+
+    /* ── Notes box ─────────────────────────────────── */
+    .notes-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+      min-height: 60px;
+    }
+
+    /* ── Change log timeline ──────────────────────── */
+    .timeline-item {
+      display: flex; gap: 12px;
+      margin-bottom: 12px;
+    }
+    .timeline-dot {
+      width: 10px; height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+      box-shadow: 0 0 6px var(--accent-glow);
+    }
+    .timeline-content { flex: 1; }
+    .timeline-action { font-size: 13px; font-weight: 600; }
+    .timeline-meta   { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    @media (max-width: 900px) {
+      .detail-grid { grid-template-columns: 1fr; }
+      .detail-hero { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1 id="topbar-title">Asset Detail</h1>
+        <p id="topbar-sub">Loading…</p>
+      </div>
+      <div class="topbar-actions">
+        <div class="notif-bell" onclick="toggleNotifPanel()">🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span></div>
+        <button class="btn btn-secondary" onclick="goBack()">← Back</button>
+        <button class="btn btn-primary" id="edit-btn" onclick="toggleEditMode()">✏ Edit</button>
+        <button class="btn btn-success hidden" id="save-btn" onclick="saveChanges()">💾 Save Changes</button>
+        <button class="btn btn-secondary hidden" id="cancel-btn" onclick="cancelEdit()">✕ Cancel</button>
+      </div>
+    </header>
+
+    <main class="page-content fade-in" id="main-content">
+      <div style="text-align:center; padding:60px;">
+        <div class="spinner" style="width:40px;height:40px;border-width:3px;margin:0 auto 16px;"></div>
+        <p style="color:var(--text-muted);">Loading asset record…</p>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Notification Panel -->
+<div id="notif-panel" style="position:fixed;top:64px;right:0;width:360px;height:calc(100vh - 64px);background:var(--bg-secondary);border-left:1px solid var(--border);padding:20px;overflow-y:auto;z-index:200;transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <h3 style="font-size:16px;font-weight:700;">Notifications</h3>
+    <button class="btn btn-secondary btn-sm" onclick="toggleNotifPanel()">✕</button>
+  </div>
+  <div id="notif-panel-list"></div>
+</div>
+
+<!-- Add Schedule Modal -->
+<div class="modal-overlay" id="schedule-modal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <div class="modal-title">📅 Add Service Schedule</div>
+      <button class="modal-close" onclick="closeModal('schedule-modal')">✕</button>
+    </div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>Service Type <span class="required">*</span></label>
+      <select id="new-service-type" class="edit-input">
+        <option value="">-- Select --</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>Scheduled Date <span class="required">*</span></label>
+      <input type="date" id="new-sched-date" class="edit-input">
+    </div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>Auto-Repeat Every</label>
+      <select id="new-sched-interval" class="edit-input">
+        <option value="">None (one-time)</option>
+        <option value="1">1 Month</option>
+        <option value="2">2 Months</option>
+        <option value="3">3 Months</option>
+        <option value="6">6 Months</option>
+        <option value="12">12 Months (Annual)</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:20px;">
+      <label>Notes</label>
+      <textarea id="new-sched-notes" class="edit-input" rows="3" placeholder="Optional notes…"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeModal('schedule-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSchedule()">Add Schedule</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mark Done Modal -->
+<div class="modal-overlay" id="done-modal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">✅ Mark Service Complete</div>
+      <button class="modal-close" onclick="closeModal('done-modal')">✕</button>
+    </div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>Completion Date</label>
+      <input type="date" id="done-date" class="edit-input">
+    </div>
+    <div class="form-group" style="margin-bottom:20px;">
+      <label>Notes</label>
+      <textarea id="done-notes" class="edit-input" rows="3" placeholder="Summary of work done…"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeModal('done-modal')">Cancel</button>
+      <button class="btn btn-success" onclick="markDone()">✅ Mark Complete</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/notifications.js"></script>
+<script>
+// ── State ────────────────────────────────────────────────────
+let assetId       = null;
+let assetData     = null;
+let isEditMode    = false;
+let presets       = {};
+let pendingDoneId = null;
+let isServer      = false;
+
+// ── Init ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  const params = new URLSearchParams(window.location.search);
+  assetId  = params.get('id');
+  isServer = params.get('type') === 'server';
+
+  if (!assetId) {
+    showError('No asset ID provided');
+    document.getElementById('main-content').innerHTML =
+      `<div class="alert alert-error" style="margin:40px auto;max-width:400px;">No asset ID specified.<br><a href="asset-list.html" style="color:var(--accent);">← Back to Assets</a></div>`;
+    return;
+  }
+
+  presets = (await api.presets.all()).data || {};
+  await loadAsset();
+});
+
+// ── Load Asset ───────────────────────────────────────────────
+async function loadAsset() {
+  try {
+    let res;
+    if (isServer) {
+      res = await api.servers.get(assetId);
+    } else {
+      res = await api.assets.get(assetId);
+    }
+    if (!res.success) throw new Error(res.error);
+    assetData = res.data;
+    renderDetail();
+  } catch (err) {
+    showError('Failed to load: ' + err.message);
+    document.getElementById('main-content').innerHTML =
+      `<div class="alert alert-error" style="margin:40px auto;max-width:400px;">Could not load record: ${err.message}<br><a href="asset-list.html" style="color:var(--accent);">← Back to Assets</a></div>`;
+  }
+}
+
+// ── Render ───────────────────────────────────────────────────
+function renderDetail() {
+  const a = assetData;
+  const isDesktop = a.asset_type === 'desktop';
+  const icon = isServer ? '🖧' : (isDesktop ? '🖥' : '💻');
+
+  // Update topbar
+  document.getElementById('topbar-title').textContent = a.server_name || a.pc_name || a.id;
+  document.getElementById('topbar-sub').textContent   = `ID: ${a.id}  •  ${isServer ? a.os_type : a.asset_type}  •  ${a.department || 'No dept'}`;
+
+  const hw = a.hardware || {};
+
+  document.getElementById('main-content').innerHTML = `
+
+    <!-- Hero -->
+    <div class="detail-hero">
+      <div class="detail-asset-icon">${icon}</div>
+      <div class="detail-asset-info">
+        <div class="detail-asset-name">${esc(a.server_name || a.pc_name || '—')}</div>
+        <div style="color:var(--text-secondary); font-size:14px;">${esc(a.pc_username || a.os_type || '')}</div>
+        <div class="detail-asset-meta">
+          <span class="meta-chip">🏷 <strong>${a.id}</strong></span>
+          ${a.department ? `<span class="meta-chip">🏢 <strong>${esc(a.department)}</strong></span>` : ''}
+          ${a.pc_location || a.location ? `<span class="meta-chip">📍 <strong>${esc(a.pc_location || a.location)}</strong></span>` : ''}
+          <span class="meta-chip">Status: ${statusBadge(a.status)}</span>
+          ${a.technician_name ? `<span class="meta-chip">👤 <strong>${esc(a.technician_name)}</strong></span>` : ''}
+          <span class="meta-chip">📅 <strong>${formatDate(a.created_at)}</strong></span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;">
+        ${a.next_service_date ? `
+          <div style="text-align:right;">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px;">Next Service</div>
+            <div style="font-size:16px;font-weight:700;color:${serviceDateColor(a.next_service_date)};">${formatDate(a.next_service_date)}</div>
+          </div>` : ''}
+        ${a.warranty_expiry ? `
+          <div style="text-align:right;">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px;">Warranty</div>
+            <div style="font-size:14px;font-weight:600;color:${warrantyColor(a.warranty_expiry)};">${formatDate(a.warranty_expiry)}</div>
+          </div>` : ''}
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="detail-actions">
+      <a href="${isServer ? 'new-server.html' : 'new-asset.html'}" class="btn btn-secondary">➕ Add New</a>
+      <a href="software-audit.html" class="btn btn-secondary">📋 Upload Audit</a>
+      <button class="btn btn-secondary" onclick="openScheduleModal()">📅 Add Schedule</button>
+      <button class="btn btn-danger btn-sm" style="margin-left:auto;" onclick="retireAsset()">
+        ${isServer ? '🔴 Decommission' : '🗑 Retire Asset'}
+      </button>
+    </div>
+
+    <!-- Detail Sections Grid -->
+    <div class="detail-grid">
+
+      <!-- Basic Info -->
+      <div class="detail-section">
+        <div class="detail-section-title">👤 Basic Information</div>
+        <div class="field-list" id="basic-fields">
+          ${isServer ? renderServerBasic(a) : renderAssetBasic(a)}
+        </div>
+      </div>
+
+      <!-- Hardware -->
+      <div class="detail-section">
+        <div class="detail-section-title">${isDesktop ? '🖥 Desktop Hardware' : (isServer ? '⚙ Server Hardware' : '💻 Laptop Hardware')}</div>
+        <div class="field-list">
+          ${isServer ? renderServerHW(a) : (isDesktop ? renderDesktopHW(hw) : renderLaptopHW(hw))}
+        </div>
+      </div>
+
+      <!-- Network & System -->
+      <div class="detail-section">
+        <div class="detail-section-title">🌐 Network &amp; System</div>
+        <div class="field-list">
+          ${field('IP Address',    a.network_ip || a.ip_address,   'mono')}
+          ${field('MAC Address',   a.network_mac || a.mac_address, 'mono')}
+          ${field('OS Version',    a.os_version)}
+          ${field('Purchase Date', formatDate(a.purchase_date))}
+          ${field('Warranty Expiry', formatDate(a.warranty_expiry))}
+          ${field('Tags',          a.tags)}
+        </div>
+      </div>
+
+      <!-- Service Schedule -->
+      <div class="detail-section">
+        <div class="detail-section-title" style="justify-content:space-between;">
+          📅 Service Schedules
+          <button class="btn btn-secondary btn-sm" onclick="openScheduleModal()">+ Add</button>
+        </div>
+        <div id="schedules-list">
+          ${renderSchedules(a.schedules || [])}
+        </div>
+      </div>
+
+      <!-- Software Audits (full width) -->
+      <div class="detail-section full-width">
+        <div class="detail-section-title" style="justify-content:space-between;">
+          📋 Software Audit Files
+          <a href="software-audit.html" class="btn btn-secondary btn-sm">Upload New</a>
+        </div>
+        <div id="audits-list">
+          ${renderAudits(a.software_audits || [])}
+        </div>
+      </div>
+
+      <!-- Notes (full width) -->
+      <div class="detail-section full-width">
+        <div class="detail-section-title">📝 Notes</div>
+        <div class="notes-box" id="notes-display">${esc(a.notes || '— No notes recorded —')}</div>
+        <textarea class="edit-input hidden" id="notes-edit" rows="5" style="margin-top:12px;width:100%;resize:vertical;">${esc(a.notes || '')}</textarea>
+      </div>
+
+    </div>
+  `;
+
+  // Populate service type select in modal
+  loadServiceTypes();
+}
+
+// ── Field Renderers ──────────────────────────────────────────
+function field(label, value, cls = '') {
+  const display = (value && value !== '—') ? `<span class="field-value ${cls}">${esc(String(value))}</span>` : `<span class="field-value empty">—</span>`;
+  return `<div class="field-row"><span class="field-label">${label}</span>${display}</div>`;
+}
+
+function renderAssetBasic(a) {
+  return field('PC Username', a.pc_username)
+    + field('PC Name', a.pc_name)
+    + field('Location', a.pc_location)
+    + field('Department', a.department)
+    + field('Type', a.asset_type)
+    + field('Status', a.status)
+    + field('Service Interval', a.service_interval_months ? a.service_interval_months + ' month(s)' : null)
+    + field('Technician', a.technician_name)
+    + field('Created', formatDateTime(a.created_at))
+    + field('Last Updated', formatDateTime(a.updated_at));
+}
+
+function renderServerBasic(a) {
+  return field('Server Name', a.server_name)
+    + field('OS Type', a.os_type)
+    + field('OS Version', a.os_version)
+    + field('Location', a.location)
+    + field('Department', a.department)
+    + field('Status', a.status)
+    + field('Roles/Services', a.roles_services)
+    + field('Remote Access', a.remote_access)
+    + field('Last Patch', formatDate(a.last_patch_date))
+    + field('Last OS Upgrade', formatDate(a.last_os_upgrade))
+    + field('Technician', a.technician_name);
+}
+
+function renderDesktopHW(hw) {
+  return field('CPU', hw.cpu)
+    + field('RAM', hw.ram)
+    + field('Motherboard', hw.motherboard)
+    + field('Power Supply', hw.power_supply)
+    + field('SSD', hw.ssd)
+    + field('HDD', hw.hdd)
+    + field('Graphics Card', hw.gfx_card)
+    + field('Monitor', hw.monitor)
+    + field('Keyboard', hw.keyboard)
+    + field('Mouse', hw.mouse)
+    + field('Headphones', hw.headphones)
+    + field('UPS', hw.ups)
+    + field('Webcam', hw.webcam)
+    + (hw.other_peripherals ? field('Other', hw.other_peripherals) : '');
+}
+
+function renderLaptopHW(hw) {
+  return field('Make', hw.make)
+    + field('Model No.', hw.model_no)
+    + field('Service Tag', hw.service_tag)
+    + field('RAM', hw.ram)
+    + field('SSD', hw.ssd)
+    + field('Battery Health', hw.battery_health)
+    + field('Power Adapter', hw.power_adapter)
+    + field('Mouse', hw.mouse)
+    + field('Headphones', hw.headphones)
+    + field('Docking Station', hw.docking_station)
+    + (hw.other_peripherals ? field('Other', hw.other_peripherals) : '');
+}
+
+function renderServerHW(a) {
+  return field('Make/Vendor', a.make)
+    + field('Model', a.model)
+    + field('Service Tag', a.service_tag)
+    + field('CPU', a.cpu)
+    + field('RAM', a.ram)
+    + field('Storage', a.storage)
+    + field('RAID Config', a.raid_config);
+}
+
+function renderSchedules(schedules) {
+  if (!schedules.length) {
+    return `<p style="color:var(--text-muted);font-size:14px;text-align:center;padding:20px 0;">
+      No service schedules yet. <button onclick="openScheduleModal()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:14px;">Add one →</button>
+    </p>`;
+  }
+  return schedules.map(s => {
+    const d = new Date(s.scheduled_date);
+    const daysUntil = Math.ceil((d - new Date()) / 86400000);
+    const urgency = s.status === 'overdue' ? 'var(--danger)' : daysUntil <= 7 ? 'var(--warning)' : 'var(--success)';
+    return `
+      <div class="schedule-item">
+        <div class="schedule-date-box" style="border-color:${urgency}">
+          <div class="schedule-date-day" style="color:${urgency}">${d.getDate()}</div>
+          <div class="schedule-date-month">${d.toLocaleDateString('en-GB',{month:'short'})}</div>
+        </div>
+        <div class="schedule-info">
+          <div class="schedule-type">${esc(s.service_type)}</div>
+          <div class="schedule-meta">${statusBadge(s.status)} ${s.notes ? '• ' + esc(s.notes.substring(0,50)) : ''}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+          ${s.status === 'pending' || s.status === 'overdue' ?
+            `<button class="btn btn-success btn-sm" onclick="openDoneModal(${s.id})">✓ Done</button>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="deleteSchedule(${s.id})">🗑</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderAudits(audits) {
+  if (!audits.length) {
+    return `<p style="color:var(--text-muted);font-size:14px;text-align:center;padding:20px 0;">
+      No audit files attached. <a href="software-audit.html" style="color:var(--accent);">Upload one →</a>
+    </p>`;
+  }
+  return audits.map(a => `
+    <div class="audit-file-item">
+      <div class="audit-file-icon">📄</div>
+      <div class="audit-file-info">
+        <div class="audit-file-name" title="${esc(a.original_filename)}">${esc(a.original_filename)}</div>
+        <div class="audit-file-meta">
+          ${formatDateTime(a.audit_date)} &nbsp;•&nbsp; ${formatBytes(a.file_size)} &nbsp;•&nbsp; By: ${esc(a.tech_name || '—')}
+        </div>
+        <div class="audit-file-meta mono" style="font-size:10px;" title="SHA-256: ${esc(a.file_hash||'')}">
+          SHA256: ${(a.file_hash||'').substring(0,20)}…
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button class="btn btn-secondary btn-sm" onclick="downloadAudit(${a.id}, '${escAttr(a.original_filename)}')">⬇</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteAudit(${a.id})">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Helper Colors ─────────────────────────────────────────────
+function serviceDateColor(dateStr) {
+  const days = Math.ceil((new Date(dateStr) - new Date()) / 86400000);
+  return days < 0 ? 'var(--danger)' : days <= 7 ? 'var(--warning)' : 'var(--success)';
+}
+function warrantyColor(dateStr) {
+  const days = Math.ceil((new Date(dateStr) - new Date()) / 86400000);
+  return days < 0 ? 'var(--danger)' : days <= 30 ? 'var(--warning)' : 'var(--text-primary)';
+}
+
+// ── Edit Mode ─────────────────────────────────────────────────
+function toggleEditMode() {
+  isEditMode = true;
+  document.getElementById('edit-btn').classList.add('hidden');
+  document.getElementById('save-btn').classList.remove('hidden');
+  document.getElementById('cancel-btn').classList.remove('hidden');
+
+  // Show notes textarea
+  const notesDisplay = document.getElementById('notes-display');
+  const notesEdit    = document.getElementById('notes-edit');
+  if (notesDisplay) notesDisplay.classList.add('hidden');
+  if (notesEdit)    notesEdit.classList.remove('hidden');
+
+  // Make field values editable
+  document.querySelectorAll('.field-value').forEach(el => {
+    if (el.classList.contains('empty')) return;
+    const row  = el.closest('.field-row');
+    const label = row?.querySelector('.field-label')?.textContent?.trim();
+    const val  = el.textContent.trim();
+    if (val === '—' || !label) return;
+    el.setAttribute('data-original', val);
+    el.innerHTML = `<input class="edit-input" data-label="${escAttr(label)}" value="${escAttr(val)}" style="width:100%;">`;
+  });
+}
+
+function cancelEdit() {
+  isEditMode = false;
+  document.getElementById('edit-btn').classList.remove('hidden');
+  document.getElementById('save-btn').classList.add('hidden');
+  document.getElementById('cancel-btn').classList.add('hidden');
+  renderDetail(); // Re-render clean
+}
+
+async function saveChanges() {
+  // For a full edit, re-direct to edit form (simpler UX)
+  if (isServer) {
+    window.location.href = `new-server.html?edit=${assetId}`;
+  } else {
+    window.location.href = `new-asset.html?edit=${assetId}`;
+  }
+}
+
+// ── Service Schedule Actions ──────────────────────────────────
+async function loadServiceTypes() {
+  const sel = document.getElementById('new-service-type');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">-- Select Service Type --</option>';
+  const types = presets['service_type'] || [];
+  types.forEach(t => {
+    const o = document.createElement('option');
+    o.value = o.textContent = t;
+    sel.appendChild(o);
+  });
+}
+
+function openScheduleModal() {
+  document.getElementById('new-sched-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('schedule-modal').classList.add('show');
+}
+
+async function saveSchedule() {
+  const type = document.getElementById('new-service-type').value;
+  const date = document.getElementById('new-sched-date').value;
+  if (!type || !date) { showError('Service type and date are required'); return; }
+
+  const payload = {
+    [isServer ? 'server_id' : 'asset_id']: assetId,
+    asset_type: isServer ? 'server' : assetData.asset_type,
+    asset_name: assetData.server_name || assetData.pc_name || assetId,
+    service_type: type,
+    scheduled_date: date,
+    next_interval_months: document.getElementById('new-sched-interval').value || null,
+    notes: document.getElementById('new-sched-notes').value
+  };
+
+  try {
+    const res = await api.schedules.create(payload);
+    if (res.success) {
+      showSuccess('Schedule added!');
+      closeModal('schedule-modal');
+      await loadAsset();
+    } else { showError(res.error); }
+  } catch (err) { showError(err.message); }
+}
+
+function openDoneModal(schedId) {
+  pendingDoneId = schedId;
+  document.getElementById('done-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('done-modal').classList.add('show');
+}
+
+async function markDone() {
+  if (!pendingDoneId) return;
+  const date  = document.getElementById('done-date').value;
+  const notes = document.getElementById('done-notes').value;
+  try {
+    const res = await api.schedules.update(pendingDoneId, {
+      status: 'done', completed_date: date, notes,
+      next_interval_months: null
+    });
+    if (res.success) {
+      showSuccess('Service marked complete!');
+      closeModal('done-modal');
+      await loadAsset();
+    } else { showError(res.error); }
+  } catch (err) { showError(err.message); }
+}
+
+async function deleteSchedule(id) {
+  if (!confirm('Delete this schedule?')) return;
+  try {
+    const res = await api.schedules.delete(id);
+    if (res.success) { showSuccess('Schedule deleted'); await loadAsset(); }
+  } catch (err) { showError(err.message); }
+}
+
+// ── Audit Actions ─────────────────────────────────────────────
+async function downloadAudit(id, filename) {
+  try {
+    const res = await api.audits.download(id);
+    if (!res.ok) { showError('Download failed or integrity check failed'); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  } catch (err) { showError('Download error: ' + err.message); }
+}
+
+async function deleteAudit(id) {
+  if (!confirm('Delete this audit record and file?')) return;
+  try {
+    const res = await api.audits.delete(id);
+    if (res.success) { showSuccess('Audit deleted'); await loadAsset(); }
+  } catch (err) { showError(err.message); }
+}
+
+// ── Retire ────────────────────────────────────────────────────
+async function retireAsset() {
+  const label = isServer ? 'decommission this server' : 'retire this asset';
+  if (!confirm(`Are you sure you want to ${label}? This marks it as inactive.`)) return;
+  try {
+    let res;
+    if (isServer) {
+      res = await api.servers.delete(assetId);
+    } else {
+      res = await api.assets.delete(assetId);
+    }
+    if (res.success) {
+      showSuccess('Asset retired successfully');
+      setTimeout(() => { window.location.href = isServer ? 'server-list.html' : 'asset-list.html'; }, 1500);
+    }
+  } catch (err) { showError(err.message); }
+}
+
+// ── Modal helpers ─────────────────────────────────────────────
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
+});
+
+// ── Navigation ────────────────────────────────────────────────
+function goBack() {
+  if (isServer) window.location.href = 'server-list.html';
+  else window.location.href = 'asset-list.html';
+}
+
+// ── Notification Panel ────────────────────────────────────────
+let notifPanelOpen = false;
+async function toggleNotifPanel() {
+  const panel = document.getElementById('notif-panel');
+  notifPanelOpen = !notifPanelOpen;
+  panel.style.transform = notifPanelOpen ? 'translateX(0)' : 'translateX(100%)';
+}
+
+// ── Escape helpers ─────────────────────────────────────────────
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = String(str || '');
+  return d.innerHTML;
+}
+function escAttr(str) {
+  return String(str || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+</script>
+</body>
+</html>
