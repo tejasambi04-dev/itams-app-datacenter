@@ -14,11 +14,11 @@
   --bg-card-hover: #1a2540;
   --bg-input:      #0e1527;
   --border:        #1e2d50;
-  --border-focus:  #3d6ff5;
+  --border-focus:  #e28e33;
 
   /* Accent */
-  --accent:        #3d6ff5;
-  --accent-light:  #5a87ff;
+  --accent:        #29db96;
+  --accent-light:  #c2b0b4;
   --accent-glow:   rgba(61, 111, 245, 0.25);
   --accent-2:      #7c3aed;
   --success:       #10b981;
